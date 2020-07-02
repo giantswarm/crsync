@@ -1,0 +1,17 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  namespace: {{ include "resource.default.namespace"  . }}
+  name: {{ include "resource.default.name"  . }}
+  labels:
+    app: {{ include "resource.default.name"  . }}
+    giantswarm.io/service-type: "managed"
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "resource.default.name"  . }}
+  egress:
+  - {}
+  policyTypes:
+  - Ingress
+  - Egress
