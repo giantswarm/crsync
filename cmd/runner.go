@@ -85,6 +85,9 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 			tagExists, err := dstRegistry.RepositoryTagExists(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
+			if tagExists {
+				fmt.Fprintf(r.stdout, "\nImage `%s/%s:%s` already exists. \n", dstRegistry.Name, repo, tag)
+				continue
 			}
 
 			if !tagExists {
