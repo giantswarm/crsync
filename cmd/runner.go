@@ -6,12 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/giantswarm/crsync/internal/key"
-	"github.com/giantswarm/crsync/pkg/quayio"
-	"github.com/giantswarm/crsync/pkg/registry"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
+
+	"github.com/giantswarm/crsync/internal/key"
+	"github.com/giantswarm/crsync/pkg/quayio"
+	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (
