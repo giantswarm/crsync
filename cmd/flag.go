@@ -36,6 +36,9 @@ func (f *flag) Validate() error {
 		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagDstRegistryUser)
 	}
 	if f.DstRegistryPassword == "" {
+		f.DstRegistryPassword = os.Getenv(env.DstRegistryPassword)
+	}
+	if f.DstRegistryPassword == "" {
 		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagDstRegistryPassword)
 	}
 
