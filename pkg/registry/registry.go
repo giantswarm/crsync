@@ -162,19 +162,10 @@ func (r *Registry) RemoveImage(repo, tag string) error {
 }
 
 func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
-	var srcImage, dstImage string
 
-	if srcRegistry == "" {
-		srcImage = fmt.Sprintf("%s:%s", repo, tag)
-	} else {
-		srcImage = fmt.Sprintf("%s/%s:%s", srcRegistry, repo, tag)
-	}
+	srcImage := fmt.Sprintf("%s/%s:%s", srcRegistry, repo, tag)
 
-	if dstRegistry == "" {
-		dstImage = fmt.Sprintf("%s:%s", repo, tag)
-	} else {
-		dstImage = fmt.Sprintf("%s/%s:%s", dstRegistry, repo, tag)
-	}
+	dstImage := fmt.Sprintf("%s/%s:%s", dstRegistry, repo, tag)
 
 	fmt.Printf("Retagging image %#q into %#q\n", srcImage, dstImage)
 
@@ -235,12 +226,7 @@ func executeCmd(binary string, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Start()
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	err = cmd.Wait()
+	err := cmd.Run()
 	if err != nil {
 		return microerror.Mask(err)
 	}
