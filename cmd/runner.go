@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/giantswarm/crsync/internal/key"
 	"github.com/giantswarm/crsync/pkg/quayio"
@@ -58,11 +57,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	lastModified, err := time.ParseDuration(r.flag.LastModified)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	reposToSync, err := quayio.ListRepositories(key.Namespace, lastModified)
+	reposToSync, err := quayio.ListRepositories(key.Namespace, r.flag.LastModified)
 	if err != nil {
 		return microerror.Mask(err)
 	}
