@@ -29,7 +29,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&f.DstRegistryName, flagDstRegistryName, "", `Destination container registry name. E.g.: "docker.io".`)
 	cmd.Flags().StringVar(&f.DstRegistryUser, flagDstRegistryUser, "", `Destination container registry user.`)
 	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, "", fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
-	cmd.Flags().StringVar(&f.LastModified, flagLastModified, "1h", `Duration in time when source repository was last modified.`)
+	cmd.Flags().DurationVar(&f.LastModified, flagLastModified, "1h", `Duration in time when source repository was last modified.`)
 }
 
 func (f *flag) Validate() error {
