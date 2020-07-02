@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/giantswarm/crsync/internal/env"
 	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/crsync/internal/env"
 
 	"github.com/spf13/cobra"
 )

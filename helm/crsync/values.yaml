@@ -10,6 +10,6 @@ destinationRegistry:
     password:
 
 image:
-  registry: docker.io
+  registry: quay.io
   name: giantswarm/crsync
-  tag: [[ .Version ]]
+  tag: "[[ .Version ]]"

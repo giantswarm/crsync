@@ -111,9 +111,9 @@ func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
 
 	var tags []string
 	{
-		nextEndpoint := fmt.Sprintf("%s", endpoint)
+		nextEndpoint := endpoint
 		for {
-			resp, err := http.Get(nextEndpoint)
+			resp, err := http.Get(nextEndpoint) // nolint
 			if err != nil {
 				return []string{}, microerror.Mask(err)
 			}
