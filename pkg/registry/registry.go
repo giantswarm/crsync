@@ -19,11 +19,17 @@ const (
 	tagLengthLimit   = 15
 )
 
-type Registry struct {
-	Address     string
+type Config struct {
 	Credentials Credentials
 	Name        string
 	HttpClient  http.Client
+}
+
+type Registry struct {
+	address     string
+	credentials Credentials
+	name        string
+	httpClient  http.Client
 }
 
 type Credentials struct {
@@ -36,10 +42,34 @@ type Repository struct {
 	Tags []string
 }
 
+func New(c Config) (Registry, error) {
+
+	// docker is specific with urls
+	var registryAddress string
+	{
+		if c.Name == "docker.io" {
+			registryAddress = "https://index.docker.io"
+		} else {
+			registryAddress = fmt.Sprintf("https://%s", c.Name)
+		}
+	}
+
+	return Registry{
+		address: registryAddress,
+		credentials: Credentials{
+			User:     c.Credentials.User,
+			Password: c.Credentials.Password,
+		},
+		name:       c.Name,
+		httpClient: c.HttpClient,
+	}, nil
+
+}
+
 func (r *Registry) Login() error {
 	fmt.Printf("Logging in destination container registry...\n")
 
-	args := []string{"login", r.Name, fmt.Sprintf("-u%s", r.Credentials.User), fmt.Sprintf("-p%s", r.Credentials.Password)}
+	args := []string{"login", r.name, fmt.Sprintf("-u%s", r.credentials.User), fmt.Sprintf("-p%s", r.credentials.Password)}
 
 	err := executeCmd(dockerBinaryName, args)
 	if err != nil {
@@ -54,10 +84,10 @@ func (r *Registry) Logout() error {
 
 	var args []string
 
-	if r.Name == "" {
+	if r.name == "" {
 		args = []string{"logout"}
 	} else {
-		args = []string{"logout", r.Name}
+		args = []string{"logout", r.name}
 	}
 
 	err := executeCmd(dockerBinaryName, args)
@@ -71,7 +101,7 @@ func (r *Registry) Logout() error {
 func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
 	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repo)
 
-	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", r.Address, repo)
+	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", r.address, repo)
 
 	type tagsJSON struct {
 		Tags []string `json:"tags"`
@@ -107,7 +137,7 @@ func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
 
 			linkHeader := resp.Header.Get("Link")
 			if linkHeader != "" {
-				nextEndpoint = fmt.Sprintf("%s%s", r.Address, getLink(linkHeader))
+				nextEndpoint = fmt.Sprintf("%s%s", r.address, getLink(linkHeader))
 			} else {
 				break
 			}
@@ -119,7 +149,7 @@ func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
 }
 
 func (r *Registry) PullImage(repo, tag string) error {
-	image := fmt.Sprintf("%s/%s:%s", r.Name, repo, tag)
+	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"pull", image}
 
@@ -132,7 +162,7 @@ func (r *Registry) PullImage(repo, tag string) error {
 }
 
 func (r *Registry) PushImage(repo, tag string) error {
-	image := fmt.Sprintf("%s/%s:%s", r.Name, repo, tag)
+	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"push", image}
 
@@ -145,7 +175,7 @@ func (r *Registry) PushImage(repo, tag string) error {
 }
 
 func (r *Registry) RemoveImage(repo, tag string) error {
-	image := fmt.Sprintf("%s/%s:%s", r.Name, repo, tag)
+	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"rmi", image}
 
@@ -176,13 +206,13 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 }
 
 func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
-	endpoint := fmt.Sprintf("%s/v1/repositories/%s/tags/%s", r.Address, repo, tag)
+	endpoint := fmt.Sprintf("%s/v1/repositories/%s/tags/%s", r.address, repo, tag)
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
 
-	resp, err := r.HttpClient.Do(req)
+	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return false, microerror.Mask(err)
 	}

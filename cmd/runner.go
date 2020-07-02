@@ -15,6 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	sourceRegistryName = "quay.io"
+)
+
 type runner struct {
 	flag   *flag
 	logger micrologger.Logger
@@ -39,11 +43,19 @@ func (r *runner) Run(cmd *cobra.Command, args []string) error {
 }
 
 func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) error {
+	var err error
 
-	srcRegistry := registry.Registry{
-		Address:    "https://quay.io",
-		Name:       "quay.io",
-		HttpClient: http.Client{},
+	var srcRegistry registry.Registry
+	{
+		config := registry.Config{
+			Name:       sourceRegistryName,
+			HttpClient: http.Client{},
+		}
+
+		srcRegistry, err = registry.New(config)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	lastModified, err := time.ParseDuration(r.flag.LastModified)
@@ -55,23 +67,21 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		return microerror.Mask(err)
 	}
 
-	// docker is specific with urls
-	var registryAddress string
+	var dstRegistry registry.Registry
 	{
-		if r.flag.DstRegistryName == "docker.io" {
-			registryAddress = "https://index.docker.io"
-		} else {
-			registryAddress = fmt.Sprintf("https://%s", r.flag.DstRegistryName)
+		config := registry.Config{
+			Name: r.flag.DstRegistryName,
+			Credentials: registry.Credentials{
+				User:     r.flag.DstRegistryUser,
+				Password: r.flag.DstRegistryPassword,
+			},
+			HttpClient: http.Client{},
 		}
-	}
-	dstRegistry := registry.Registry{
-		Address: registryAddress,
-		Name:    r.flag.DstRegistryName,
-		Credentials: registry.Credentials{
-			User:     r.flag.DstRegistryUser,
-			Password: r.flag.DstRegistryPassword,
-		},
-		HttpClient: http.Client{},
+
+		dstRegistry, err = registry.New(config)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	defer dstRegistry.Logout()
@@ -96,19 +106,19 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 			if tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i+1, len(tags), dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i+1, len(tags), r.flag.DstRegistryName, repo, tag)
 				continue
 			}
 
 			if !tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i+1, len(tags), dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i+1, len(tags), r.flag.DstRegistryName, repo, tag)
 
 				err := srcRegistry.PullImage(repo, tag)
 				if err != nil {
 					return microerror.Mask(err)
 				}
 
-				err = registry.RetagImage(repo, tag, srcRegistry.Name, dstRegistry.Name)
+				err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
 				if err != nil {
 					return microerror.Mask(err)
 				}
