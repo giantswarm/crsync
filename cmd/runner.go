@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/giantswarm/crsync/internal/key"
 	"github.com/giantswarm/crsync/pkg/quayio"
@@ -45,7 +46,11 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		HttpClient: http.Client{},
 	}
 
-	reposToSync, err := quayio.ListRepositories(key.Namespace)
+	lastModified, err := time.ParseDuration(r.flag.LastModified)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	reposToSync, err := quayio.ListRepositories(key.Namespace, lastModified)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -75,20 +80,24 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		return microerror.Mask(err)
 	}
 
+	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
+
 	for _, repo := range reposToSync {
 		tags, err := srcRegistry.ListRepositoryTags(repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		for _, tag := range tags {
+		fmt.Printf("There are %d tags in %s repository.\n", len(tags), repo)
+
+		for i, tag := range tags {
 			tagExists, err := dstRegistry.RepositoryTagExists(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 
 			if !tagExists {
-				fmt.Printf("\nImage `%s/%s:%s` is missing. \n", dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i, len(tags), dstRegistry.Name, repo, tag)
 
 				err := srcRegistry.PullImage(repo, tag)
 				if err != nil {
@@ -116,7 +125,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				}
 
 			} else {
-				fmt.Printf("\nImage `%s/%s:%s` already exists. \n", dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i, len(tags), dstRegistry.Name, repo, tag)
 			}
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/giantswarm/microerror"
 )
@@ -225,6 +226,8 @@ func executeCmd(binary string, args []string) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
+
+	time.Sleep(time.Second * 1)
 
 	return nil
 }

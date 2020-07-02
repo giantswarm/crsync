@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/giantswarm/microerror"
 )
 
 const (
-	// Sun, 01 Jul 18 00:00:00 +0000
-	lastModifiedTimestamp = 1530403200
-
 	publicImagesOnly   = true
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
 )
@@ -26,7 +24,7 @@ type RepositoriesJSON struct {
 	Repositories []Repository `json:"repositories"`
 }
 
-func ListRepositories(namespace string) ([]string, error) {
+func ListRepositories(namespace string, lastModified time.Duration) ([]string, error) {
 	fmt.Printf("Reading list of quay repostories in %#q namespace...\n", namespace)
 
 	var reposToSync []string
@@ -64,6 +62,7 @@ func ListRepositories(namespace string) ([]string, error) {
 	}
 
 	for _, repo := range data.Repositories {
+		lastModifiedTimestamp := int(time.Now().Add(-1 * lastModified).Unix())
 		if repo.LastModified > lastModifiedTimestamp {
 			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", namespace, repo.Name))
 		}
