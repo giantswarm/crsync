@@ -1,0 +1,15 @@
+name: crsync
+
+lastModified: 2h
+
+destinationRegistry:
+  name: docker.io
+  credentials:
+    user:
+    # base64 encoded password
+    password:
+
+image:
+  registry: docker.io
+  name: giantswarm/crsync
+  tag: [[ .Version ]]

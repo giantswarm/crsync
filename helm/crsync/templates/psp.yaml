@@ -1,0 +1,24 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "resource.default.name"  . }}
+  labels:
+    app: {{ include "resource.default.name"  . }}
+    giantswarm.io/service-type: "managed"
+spec:
+  privileged: false
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  hostPID: false
+  hostIPC: false
+  hostNetwork: false
+  volumes:
+    - secret
+    - hostPath
+  fsGroup:
+    rule: RunAsAny
+  readOnlyRootFilesystem: false

@@ -1,0 +1,33 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "resource.default.name"  . }}
+  namespace: {{ include "resource.default.namespace"  . }}
+  labels:
+    app: {{ include "resource.default.name"  . }}
+rules:
+- apiGroups:
+  - extensions
+  - policy
+  resources:
+  - podsecuritypolicies
+  resourceNames:
+  - {{ include "resource.default.name"  . }}
+  verbs:
+  - "use"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "resource.default.name"  . }}
+  namespace: {{ include "resource.default.namespace"  . }}
+  labels:
+    app: {{ include "resource.default.name"  . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "resource.default.name"  . }}
+  namespace: {{ include "resource.default.namespace"  . }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "resource.default.name"  . }}
+  apiGroup: rbac.authorization.k8s.io
