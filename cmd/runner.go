@@ -96,12 +96,12 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 			if tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i, len(tags), dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i+1, len(tags), dstRegistry.Name, repo, tag)
 				continue
 			}
 
 			if !tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i, len(tags), dstRegistry.Name, repo, tag)
+				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i+1, len(tags), dstRegistry.Name, repo, tag)
 
 				err := srcRegistry.PullImage(repo, tag)
 				if err != nil {
