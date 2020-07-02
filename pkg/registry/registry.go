@@ -230,12 +230,7 @@ func executeCmd(binary string, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Start()
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	err = cmd.Wait()
+	err := cmd.Run()
 	if err != nil {
 		return microerror.Mask(err)
 	}
