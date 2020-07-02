@@ -47,5 +47,5 @@ spec:
           - name: docker-socket
             hostPath:
               path: /var/run/docker.sock
-  schedule: "* */1 * * *"
+  schedule: "0 * * * *"
   successfulJobsHistoryLimit: 3
