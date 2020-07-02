@@ -92,7 +92,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
-	for _, repo := range reposToSync {
+	for repoIndex, repo := range reposToSync {
 		tags, err := srcRegistry.ListRepositoryTags(repo)
 		if err != nil {
 			return microerror.Mask(err)
@@ -100,18 +100,18 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 		fmt.Printf("There are %d tags in %s repository.\n", len(tags), repo)
 
-		for i, tag := range tags {
+		for tagIndex, tag := range tags {
 			tagExists, err := dstRegistry.RepositoryTagExists(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 			if tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` already exists.\n", i+1, len(tags), r.flag.DstRegistryName, repo, tag)
+				fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` already exists.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
 				continue
 			}
 
 			if !tagExists {
-				fmt.Printf("\n[%d/%d] Image `%s/%s:%s` is missing.\n", i+1, len(tags), r.flag.DstRegistryName, repo, tag)
+				fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` is missing.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
 
 				err := srcRegistry.PullImage(repo, tag)
 				if err != nil {
