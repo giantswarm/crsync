@@ -80,7 +80,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	defer dstRegistry.Logout()
+	defer dstRegistry.Logout() // nolint
 	err = dstRegistry.Login()
 	if err != nil {
 		return microerror.Mask(err)
