@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	flagDstRegistryName     = "dst.name"
-	flagDstRegistryUser     = "dst.user"
-	flagDstRegistryPassword = "dst.password"
+	flagDstRegistryName     = "dst-name"
+	flagDstRegistryUser     = "dst-user"
+	flagDstRegistryPassword = "dst-password"
 )
 
 type flag struct {
