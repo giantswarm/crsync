@@ -23,9 +23,9 @@ type flag struct {
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&f.DstRegistryName, flagDstRegistryName, "", "Destination container registry name.")
+	cmd.Flags().StringVar(&f.DstRegistryName, flagDstRegistryName, "", `Destination container registry name. E.g.: "docker.io".`)
 	cmd.Flags().StringVar(&f.DstRegistryUser, flagDstRegistryUser, "", "Destination container registry user.")
-	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, os.Getenv(env.DstRegistryPassword), fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
+	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, "", fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
 }
 
 func (f *flag) Validate() error {
@@ -34,6 +34,9 @@ func (f *flag) Validate() error {
 	}
 	if f.DstRegistryUser == "" {
 		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagDstRegistryUser)
+	}
+	if f.DstRegistryPassword == "" {
+		f.DstRegistryPassword = os.Getenv(env.DstRegistryPassword)
 	}
 	if f.DstRegistryPassword == "" {
 		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagDstRegistryPassword)

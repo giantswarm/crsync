@@ -82,12 +82,7 @@ func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
 	{
 		nextEndpoint := fmt.Sprintf("%s", endpoint)
 		for {
-			req, err := http.NewRequest("GET", nextEndpoint, nil)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			resp, err := r.HttpClient.Do(req)
+			resp, err := http.Get(nextEndpoint)
 			if err != nil {
 				return []string{}, microerror.Mask(err)
 			}
