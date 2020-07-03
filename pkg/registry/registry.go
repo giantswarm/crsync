@@ -241,7 +241,7 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 			imageExists = false
 		}
 
-		cmd.Process.Kill()
+		_ = cmd.Process.Kill()
 		wg.Done()
 	}()
 
