@@ -220,11 +220,8 @@ func (r *Registry) RepositoryTagExists(repo, tag string) bool {
 	)
 
 	err := cmd.Run()
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err != nil
 }
 
 func binaryExists() bool {
