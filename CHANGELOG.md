@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Replace `v1` registry endpoint call with `docker pull` command to check if requested image tag exists.
+
 ## [0.1.0] - 2020-07-02
 
 ### Added
