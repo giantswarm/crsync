@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -205,23 +207,47 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	return nil
 }
 
-func (r *Registry) RepositoryTagExists(repo, tag string) bool {
+func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
+	var imageExists bool
+
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
-	args := []string{"manifest", "inspect", image}
+	args := []string{"pull", image}
 
 	cmd := exec.Command(
 		dockerBinaryName,
 		args...,
 	)
 
-	cmd.Env = append(os.Environ(),
-		"DOCKER_CLI_EXPERIMENTAL=enabled",
-	)
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
 
-	err := cmd.Run()
+	go func() {
+		_ = cmd.Run()
+	}()
 
-	return err != nil
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		for outb.String() == "" && errb.String() == "" {
+			time.Sleep(time.Millisecond * 10)
+		}
+
+		if errb.String() != "" {
+			imageExists = false
+		} else {
+			imageExists = true
+		}
+
+		_ = cmd.Process.Kill()
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	return imageExists, nil
 }
 
 func binaryExists() bool {
