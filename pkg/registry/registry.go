@@ -235,7 +235,7 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 			time.Sleep(time.Millisecond * 10)
 		}
 
-		if errb.String() != "" {
+		if errb.Len() > 0 {
 			imageExists = false
 		} else {
 			imageExists = true
