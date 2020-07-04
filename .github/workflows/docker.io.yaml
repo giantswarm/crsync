@@ -45,7 +45,6 @@ jobs:
   run_synchronization:
     name: Synchronize images with docker.io
     runs-on: ubuntu-18.04
-    if: ${{ needs.gather_facts.outputs.unchanged == 'true' }}
     needs:
       - install_crsync
     steps:
