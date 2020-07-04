@@ -1,4 +1,4 @@
-name: Synchronize images between quay.io and docker.io
+name: Synchronize images between quay.io and giantswarm.azurecr.io
 
 on:
   schedule:
@@ -68,9 +68,9 @@ jobs:
           echo "::add-path::/opt/bin"
       - name: Run synchrnoizer
         env:
-          REGISTRY_NAME: docker.io
-          REGISTRY_USER: ${{ secrets.DOCKER_IO_USER }}
-          REGISTRY_PASSWORD: ${{ secrets.DOCKER_IO_PASSWORD }}
+          REGISTRY_NAME: giantswarm.azurecr.io
+          REGISTRY_USER: ${{ secrets.GIANTSWARM_AZURECR_IO_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.GIANTSWARM_AZURECR_IO_PASSWORD }}
           LAST_MODIFIED: 2h
         run: |
           crsync --dst-name "$REGISTRY_NAME" --dst-user "$REGISTRY_USER" --dst-password "$REGISTRY_PASSWORD" --last-modified "$LAST_MODIFIED"
