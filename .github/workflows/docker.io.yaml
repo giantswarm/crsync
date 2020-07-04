@@ -1,0 +1,44 @@
+name: Synchroniza images between quay.io and docker.io
+
+on: [push]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  install_crsynct:
+    name: Install crsync
+    runs-on: ubuntu-18.04
+    env:
+      BINARY: "crsync"
+      DIR: "/opt/cache"
+      IMAGE: "quay.io/giantswarm/crsync"
+      IMAGE_PATH: "/crsync"
+      VERSION: "0.2.0"
+    outputs:
+      cache_key: "${{ steps.get_cache_key.outputs.cache_key }}"
+    steps:
+      - name: Get cache key
+        id: get_cache_key
+        run: |
+          cache_key="install-${{ env.BINARY }}-${{ env.VERSION }}"
+          echo "::set-output name=cache_key::${cache_key}"
+      - name: Cache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          key: "${{ steps.get_cache_key.outputs.cache_key }}"
+          path: "${{ env.DIR }}"
+      - name: Download
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ${{ env.DIR }}
+          docker container create --name tmp ${{ env.IMAGE }}:${{ env.VERSION }}
+          docker cp tmp:${{ env.IMAGE_PATH }} ${{ env.DIR }}/${{ env.BINARY }}
+          docker container rm tmp
+      - name: Smoke test
+        run: |
+          ${{ env.DIR }}/${{ env.BINARY }} --help
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: "${{ env.BINARY }}"
+          path: "${{ env.DIR }}/${{ env.BINARY }}"
