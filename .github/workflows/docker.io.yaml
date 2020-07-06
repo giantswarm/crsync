@@ -3,7 +3,7 @@ name: Synchronize images between quay.io and docker.io
 on:
   schedule:
     # run every hour
-    - cron:  '0 * * * *'
+    - cron:  '0 */4 * * *'
 
 jobs:
   install_crsync:
@@ -71,6 +71,6 @@ jobs:
           REGISTRY_NAME: docker.io
           REGISTRY_USER: ${{ secrets.DOCKER_IO_USER }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKER_IO_PASSWORD }}
-          LAST_MODIFIED: 2h
+          LAST_MODIFIED: 5h
         run: |
           crsync --dst-name "$REGISTRY_NAME" --dst-user "$REGISTRY_USER" --dst-password "$REGISTRY_PASSWORD" --last-modified "$LAST_MODIFIED"
