@@ -69,7 +69,10 @@ func dockerHubAuth(authEndpoint string, creds Credentials) (string, error) {
 
 	jsonValues, _ := json.Marshal(values)
 
-	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonValues))
+	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonValues)) // nolint
+	if err != nil {
+		return "", microerror.Mask(err)
+	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

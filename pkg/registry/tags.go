@@ -83,12 +83,5 @@ func listRepoTagsAzureCR(endpoint, token, repo string, httpClient *http.Client) 
 		return []string{}, microerror.Mask(err)
 	}
 
-	var tags []string
-	{
-		for _, tag := range tagsJSON.Tags {
-			tags = append(tags, tag)
-		}
-	}
-
-	return tags, nil
+	return tagsJSON.Tags, nil
 }
