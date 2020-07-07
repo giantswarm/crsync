@@ -20,10 +20,11 @@ const (
 )
 
 type flag struct {
-	DstRegistryName     string
-	DstRegistryUser     string
-	DstRegistryPassword string
-	LastModified        time.Duration
+	DstRegistryAuthMethod string
+	DstRegistryName       string
+	DstRegistryUser       string
+	DstRegistryPassword   string
+	LastModified          time.Duration
 }
 
 func (f *flag) Init(cmd *cobra.Command) {

@@ -12,3 +12,12 @@ var executionFailedError = &microerror.Error{
 func IsExecutionFailed(err error) bool {
 	return microerror.Cause(err) == executionFailedError
 }
+
+var unknownContainerRegistryKindError = &microerror.Error{
+	Kind: "unknownContainerRegistryKind",
+}
+
+// IsUnknownAuthMethodError asserts unknownContainerRegistryKind
+func IsUnknownContainerRegistryKind(err error) bool {
+	return microerror.Cause(err) == unknownContainerRegistryKindError
+}

@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -29,9 +27,16 @@ type Config struct {
 
 type Registry struct {
 	address     string
+	auth        Auth
 	credentials Credentials
+	kind        string
 	name        string
 	httpClient  http.Client
+}
+
+type Auth struct {
+	endpoint string
+	token    string
 }
 
 type Credentials struct {
@@ -47,21 +52,29 @@ type Repository struct {
 func New(c Config) (Registry, error) {
 
 	// docker is specific with urls
-	var registryAddress string
+	var registryAddress, authEndpoint, kind string
 	{
 		if c.Name == "docker.io" {
 			registryAddress = "https://index.docker.io"
+			authEndpoint = "https://hub.docker.com"
+			kind = DockerHubContainerRegistry
 		} else {
 			registryAddress = fmt.Sprintf("https://%s", c.Name)
+			authEndpoint = fmt.Sprintf("https://%s", c.Name)
+			kind = AzureContainerRegistry
 		}
 	}
 
 	return Registry{
 		address: registryAddress,
+		auth: Auth{
+			endpoint: authEndpoint,
+		},
 		credentials: Credentials{
 			User:     c.Credentials.User,
 			Password: c.Credentials.Password,
 		},
+		kind:       kind,
 		name:       c.Name,
 		httpClient: c.HttpClient,
 	}, nil
@@ -208,46 +221,25 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 }
 
 func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
-	var imageExists bool
+	var tags []string
+	var err error
 
-	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
-
-	args := []string{"pull", image}
-
-	cmd := exec.Command(
-		dockerBinaryName,
-		args...,
-	)
-
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-
-	go func() {
-		_ = cmd.Run()
-	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		for outb.String() == "" && errb.String() == "" {
-			time.Sleep(time.Millisecond * 10)
+	switch r.kind {
+	case DockerHubContainerRegistry:
+		tags, err = listRepoTagsDockerHub(r.auth.endpoint, r.auth.token, repo, &r.httpClient)
+		if err != nil {
+			return false, microerror.Mask(err)
 		}
-
-		if errb.Len() > 0 {
-			imageExists = false
-		} else {
-			imageExists = true
+	case AzureContainerRegistry:
+		tags, err = listRepoTagsAzureCR(r.auth.endpoint, r.auth.token, repo, &r.httpClient)
+		if err != nil {
+			return false, microerror.Mask(err)
 		}
+	default:
+		return false, microerror.Mask(unknownContainerRegistryKindError)
+	}
 
-		_ = cmd.Process.Kill()
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	return imageExists, nil
+	return stringInSlice(tag, tags), nil
 }
 
 func binaryExists() bool {
@@ -301,4 +293,13 @@ func getLink(linkHeader string) string {
 		return ""
 	}
 	return linkHeader[s:e]
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

@@ -85,6 +85,10 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	if err != nil {
 		return microerror.Mask(err)
 	}
+	err = dstRegistry.Authorize()
+	if err != nil {
+		return microerror.Mask(err)
+	}
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
