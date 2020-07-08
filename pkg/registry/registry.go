@@ -70,10 +70,7 @@ func New(c Config) (Registry, error) {
 		auth: Auth{
 			endpoint: authEndpoint,
 		},
-		credentials: Credentials{
-			User:     c.Credentials.User,
-			Password: c.Credentials.Password,
-		},
+		credentials: Credentials(c.Credentials),
 		kind:       kind,
 		name:       c.Name,
 		httpClient: c.HttpClient,
