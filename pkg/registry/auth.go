@@ -38,21 +38,12 @@ func (r *Registry) Authorize() error {
 			return microerror.Mask(err)
 		}
 	default:
-		return false, microerror.Maskf(executionFailedError, "uknonw container registry kind %#q", r.kind)
+		return microerror.Maskf(executionFailedError, "unknown container registry kind %#q", r.kind)
 	}
 
 	r.auth.token = token
 
 	return nil
-}
-
-func IsSupportedAuthMethod(authMethod string) bool {
-	for _, m := range SupportedAuthMethods {
-		if m == authMethod {
-			return true
-		}
-	}
-	return false
 }
 
 func basicAuth(creds Credentials) (string, error) {
