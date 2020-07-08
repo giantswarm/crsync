@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
-	"time"
 
 	"github.com/giantswarm/microerror"
 )
@@ -23,18 +22,11 @@ type Config struct {
 }
 
 type Registry struct {
-	address     string
-	auth        Auth
 	credentials Credentials
 	name        string
-	kind        string
 
 	registryClient RegistryClient
 	httpClient     *http.Client
-}
-type Auth struct {
-	endpoint string
-	token    string
 }
 
 type Credentials struct {
@@ -48,28 +40,8 @@ type Repository struct {
 }
 
 func New(c Config) (Registry, error) {
-
-	// docker is specific with urls
-	var registryAddress, authEndpoint, kind string
-	{
-		if c.Name == "docker.io" {
-			registryAddress = "https://index.docker.io"
-			authEndpoint = "https://hub.docker.com"
-			kind = DockerHubContainerRegistry
-		} else {
-			registryAddress = fmt.Sprintf("https://%s", c.Name)
-			authEndpoint = fmt.Sprintf("https://%s", c.Name)
-			kind = AzureContainerRegistry
-		}
-	}
-
 	return Registry{
-		address: registryAddress,
-		auth: Auth{
-			endpoint: authEndpoint,
-		},
-		credentials:    Credentials(c.Credentials),
-		kind:           kind,
+		credentials:    c.Credentials,
 		name:           c.Name,
 		registryClient: c.RegistryClient,
 		httpClient:     &c.HttpClient,
@@ -227,8 +199,6 @@ func executeCmd(binary string, args []string) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
-	time.Sleep(time.Second * 1)
 
 	return nil
 }

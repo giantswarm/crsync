@@ -14,7 +14,7 @@ import (
 
 const (
 	authEndpoint    = "https://hub.docker.com"
-	registryAddress = "https://index.docker.io"
+	registryAddress = "https://index.docker.io" // nolint
 )
 
 type Config struct {
@@ -48,13 +48,13 @@ func (d *DockerHub) Authorize() error {
 
 	resp, err := d.httpClient.Post(endpoint, "application/json", bytes.NewBuffer(jsonValues)) // nolint
 	if err != nil {
-		microerror.Mask(err)
+		return microerror.Mask(err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		microerror.Mask(err)
+		return microerror.Mask(err)
 	}
 
 	type authDataResponse struct {
@@ -64,7 +64,7 @@ func (d *DockerHub) Authorize() error {
 	var authData authDataResponse
 	err = json.Unmarshal(body, &authData)
 	if err != nil {
-		microerror.Mask(err)
+		return microerror.Mask(err)
 	}
 
 	d.token = authData.Token

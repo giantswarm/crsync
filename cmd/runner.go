@@ -108,7 +108,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 			}
 
 		default:
-
+			return microerror.Maskf(executionFailedError, "unknown container registry %#q", registryName)
 		}
 	}
 

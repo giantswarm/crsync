@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/giantswarm/crsync/pkg/registry"
 	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 type Config struct {
