@@ -1,13 +1,10 @@
 package registry
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 	"time"
 
@@ -16,7 +13,6 @@ import (
 
 const (
 	dockerBinaryName = "docker"
-	tagLengthLimit   = 15
 )
 
 type Config struct {
@@ -91,6 +87,11 @@ func (r *Registry) Login() error {
 		return microerror.Mask(err)
 	}
 
+	err = r.authorize()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	return nil
 }
 
@@ -113,58 +114,16 @@ func (r *Registry) Logout() error {
 	return nil
 }
 
+func (r *Registry) authorize() error {
+	return r.registryClient.Authorize()
+}
+
 func (r *Registry) ListRepositories() ([]string, error) {
 	return r.registryClient.ListRepositories()
 }
 
-func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
-	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repo)
-
-	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", r.address, repo)
-
-	type tagsJSON struct {
-		Tags []string `json:"tags"`
-	}
-
-	var tagsData tagsJSON
-
-	var tags []string
-	{
-		nextEndpoint := endpoint
-		for {
-			resp, err := http.Get(nextEndpoint) // nolint
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			err = json.Unmarshal(body, &tagsData)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			for _, tag := range tagsData.Tags {
-				if len(tag) < tagLengthLimit {
-					tags = append(tags, tag)
-				}
-			}
-
-			linkHeader := resp.Header.Get("Link")
-			if linkHeader != "" {
-				nextEndpoint = fmt.Sprintf("%s%s", r.address, getLink(linkHeader))
-			} else {
-				break
-			}
-		}
-	}
-
-	return tags, nil
-
+func (r *Registry) ListTags(repository string) ([]string, error) {
+	return r.registryClient.ListTags(repository)
 }
 
 func (r *Registry) PullImage(repo, tag string) error {
@@ -228,19 +187,9 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 	var tags []string
 	var err error
 
-	switch r.kind {
-	case DockerHubContainerRegistry:
-		tags, err = listRepoTagsDockerHub(r.auth.endpoint, r.auth.token, repo, r.httpClient)
-		if err != nil {
-			return false, microerror.Mask(err)
-		}
-	case AzureContainerRegistry:
-		tags, err = listRepoTagsAzureCR(r.auth.endpoint, r.auth.token, repo, r.httpClient)
-		if err != nil {
-			return false, microerror.Mask(err)
-		}
-	default:
-		return false, microerror.Maskf(executionFailedError, "uknonw container registry kind %#q", r.kind)
+	tags, err = r.ListTags(repo)
+	if err != nil {
+		return false, microerror.Mask(err)
 	}
 
 	return stringInSlice(tag, tags), nil
@@ -282,21 +231,6 @@ func executeCmd(binary string, args []string) error {
 	time.Sleep(time.Second * 1)
 
 	return nil
-}
-
-func getLink(linkHeader string) string {
-	start := "<"
-	end := ">"
-	s := strings.Index(linkHeader, start)
-	if s == -1 {
-		return ""
-	}
-	s += len(start)
-	e := strings.Index(linkHeader, end)
-	if e == -1 {
-		return ""
-	}
-	return linkHeader[s:e]
 }
 
 func stringInSlice(a string, list []string) bool {

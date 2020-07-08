@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -12,7 +13,10 @@ import (
 
 const (
 	publicImagesOnly   = true
+	registryEndpoint   = "https://quay.io"
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
+
+	tagLengthLimit = 20
 )
 
 type Quay struct {
@@ -97,5 +101,66 @@ func (q *Quay) ListRepositories() ([]string, error) {
 }
 
 func (q *Quay) ListTags(repository string) ([]string, error) {
-	return []string{}, nil
+	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repository)
+
+	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", registryEndpoint, repository)
+
+	type tagsJSON struct {
+		Tags []string `json:"tags"`
+	}
+
+	var tagsData tagsJSON
+
+	var tags []string
+	{
+		nextEndpoint := endpoint
+		for {
+			resp, err := http.Get(nextEndpoint) // nolint
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			err = json.Unmarshal(body, &tagsData)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			for _, tag := range tagsData.Tags {
+				if len(tag) < tagLengthLimit {
+					tags = append(tags, tag)
+				}
+			}
+
+			linkHeader := resp.Header.Get("Link")
+			if linkHeader != "" {
+				nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, getLink(linkHeader))
+			} else {
+				break
+			}
+		}
+	}
+
+	return tags, nil
+
+}
+
+func getLink(linkHeader string) string {
+	start := "<"
+	end := ">"
+	s := strings.Index(linkHeader, start)
+	if s == -1 {
+		return ""
+	}
+	s += len(start)
+	e := strings.Index(linkHeader, end)
+	if e == -1 {
+		return ""
+	}
+	return linkHeader[s:e]
 }

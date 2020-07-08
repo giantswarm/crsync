@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
 
 	"github.com/giantswarm/crsync/internal/key"
+	"github.com/giantswarm/crsync/pkg/azurecr"
+	"github.com/giantswarm/crsync/pkg/dockerhub"
 	"github.com/giantswarm/crsync/pkg/quay"
 	"github.com/giantswarm/crsync/pkg/registry"
 )
@@ -74,6 +77,41 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		return microerror.Mask(err)
 	}
 
+	var registryClient registry.RegistryClient
+	{
+		switch registryName := r.flag.DstRegistryName; {
+		case registryName == "docker.io":
+
+			registryClientConfig := dockerhub.Config{
+				Credentials: registry.Credentials{
+					User:     r.flag.DstRegistryUser,
+					Password: r.flag.DstRegistryPassword,
+				},
+			}
+
+			registryClient, err = dockerhub.New(registryClientConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+		case strings.HasSuffix(registryName, "azurecr.io"):
+			registryClientConfig := azurecr.Config{
+				Credentials: registry.Credentials{
+					User:     r.flag.DstRegistryUser,
+					Password: r.flag.DstRegistryPassword,
+				},
+				RegistryName: r.flag.DstRegistryName,
+			}
+
+			registryClient, err = azurecr.New(registryClientConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+		default:
+
+		}
+	}
+
 	var dstRegistry registry.Registry
 	{
 		config := registry.Config{
@@ -82,7 +120,8 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				User:     r.flag.DstRegistryUser,
 				Password: r.flag.DstRegistryPassword,
 			},
-			HttpClient: http.Client{},
+			RegistryClient: registryClient,
+			HttpClient:     http.Client{},
 		}
 
 		dstRegistry, err = registry.New(config)
@@ -96,15 +135,11 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	err = dstRegistry.Authorize()
-	if err != nil {
-		return microerror.Mask(err)
-	}
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
-		tags, err := srcRegistry.ListRepositoryTags(repo)
+		tags, err := srcRegistry.ListTags(repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
