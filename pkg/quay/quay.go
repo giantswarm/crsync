@@ -47,6 +47,10 @@ func New(c Config) (*Quay, error) {
 	}, nil
 }
 
+func (q *Quay) Authorize() error {
+	return nil
+}
+
 func (q *Quay) ListRepositories() ([]string, error) {
 	fmt.Printf("Reading list of quay repostories in %#q namespace...\n", q.namespace)
 
@@ -90,4 +94,8 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	}
 
 	return reposToSync, nil
+}
+
+func (q *Quay) ListTags(repository string) ([]string, error) {
+	return []string{}, nil
 }
