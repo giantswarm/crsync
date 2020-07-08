@@ -38,7 +38,7 @@ func (r *Registry) Authorize() error {
 			return microerror.Mask(err)
 		}
 	default:
-		return microerror.Mask(unknownContainerRegistryKindError)
+		return false, microerror.Maskf(executionFailedError, "uknonw container registry kind %#q", r.kind)
 	}
 
 	r.auth.token = token
