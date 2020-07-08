@@ -236,7 +236,7 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 			return false, microerror.Mask(err)
 		}
 	default:
-		return false, microerror.Mask(unknownContainerRegistryKindError)
+		return false, microerror.Maskf(executionFailedError, "uknonw container registry kind %#q", r.kind)
 	}
 
 	return stringInSlice(tag, tags), nil
