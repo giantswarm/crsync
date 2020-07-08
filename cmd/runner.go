@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/giantswarm/crsync/internal/key"
-	"github.com/giantswarm/crsync/pkg/quayio"
+	"github.com/giantswarm/crsync/pkg/quay"
 	"github.com/giantswarm/crsync/pkg/registry"
 )
 
@@ -47,9 +47,20 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	var srcRegistry registry.Registry
 	{
+		registryClientConfig := quay.Config{
+			Namespace:    key.Namespace,
+			LastModified: r.flag.LastModified,
+		}
+
+		registryClient, err := quay.New(registryClientConfig)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		config := registry.Config{
-			Name:       sourceRegistryName,
-			HttpClient: http.Client{},
+			Name:           sourceRegistryName,
+			HttpClient:     http.Client{},
+			RegistryClient: registryClient,
 		}
 
 		srcRegistry, err = registry.New(config)
@@ -58,7 +69,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	reposToSync, err := quayio.ListRepositories(key.Namespace, r.flag.LastModified)
+	reposToSync, err := srcRegistry.ListRepositories()
 	if err != nil {
 		return microerror.Mask(err)
 	}

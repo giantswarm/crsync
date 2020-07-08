@@ -1,4 +1,4 @@
-package quayio
+package quay
 
 import (
 	"encoding/json"
@@ -15,6 +15,18 @@ const (
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
 )
 
+type Quay struct {
+	namespace    string
+	lastModified time.Duration
+
+	httpClient *http.Client
+}
+
+type Config struct {
+	Namespace    string
+	LastModified time.Duration
+}
+
 type Repository struct {
 	Name         string `json:"name"`
 	LastModified int    `json:"last_modified"`
@@ -24,26 +36,35 @@ type RepositoriesJSON struct {
 	Repositories []Repository `json:"repositories"`
 }
 
-func ListRepositories(namespace string, lastModified time.Duration) ([]string, error) {
-	fmt.Printf("Reading list of quay repostories in %#q namespace...\n", namespace)
+func New(c Config) (*Quay, error) {
+	httpClient := &http.Client{}
+
+	return &Quay{
+		namespace:    c.Namespace,
+		lastModified: c.LastModified,
+
+		httpClient: httpClient,
+	}, nil
+}
+
+func (q *Quay) ListRepositories() ([]string, error) {
+	fmt.Printf("Reading list of quay repostories in %#q namespace...\n", q.namespace)
 
 	var reposToSync []string
-
-	httpClient := http.Client{}
 
 	req, err := http.NewRequest("GET", repositoryEndpoint, nil)
 	if err != nil {
 		return reposToSync, microerror.Mask(err)
 	}
 
-	q := req.URL.Query()
-	q.Add("last_modified", "true")
-	q.Add("starred", "false")
-	q.Add("public", fmt.Sprintf("%t", publicImagesOnly))
-	q.Add("namespace", namespace)
-	req.URL.RawQuery = q.Encode()
+	query := req.URL.Query()
+	query.Add("last_modified", "true")
+	query.Add("starred", "false")
+	query.Add("public", fmt.Sprintf("%t", publicImagesOnly))
+	query.Add("namespace", q.namespace)
+	req.URL.RawQuery = query.Encode()
 
-	resp, err := httpClient.Do(req)
+	resp, err := q.httpClient.Do(req)
 	if err != nil {
 		return reposToSync, microerror.Mask(err)
 	}
@@ -62,9 +83,9 @@ func ListRepositories(namespace string, lastModified time.Duration) ([]string, e
 	}
 
 	for _, repo := range data.Repositories {
-		lastModifiedTimestamp := int(time.Now().Add(-1 * lastModified).Unix())
+		lastModifiedTimestamp := int(time.Now().Add(-1 * q.lastModified).Unix())
 		if repo.LastModified > lastModifiedTimestamp {
-			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", namespace, repo.Name))
+			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
 		}
 	}
 

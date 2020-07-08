@@ -20,20 +20,22 @@ const (
 )
 
 type Config struct {
-	Credentials Credentials
-	Name        string
-	HttpClient  http.Client
+	Credentials    Credentials
+	Name           string
+	HttpClient     http.Client
+	RegistryClient RegistryClient
 }
 
 type Registry struct {
 	address     string
 	auth        Auth
 	credentials Credentials
-	kind        string
 	name        string
-	httpClient  http.Client
-}
+	kind        string
 
+	registryClient RegistryClient
+	httpClient     *http.Client
+}
 type Auth struct {
 	endpoint string
 	token    string
@@ -70,10 +72,11 @@ func New(c Config) (Registry, error) {
 		auth: Auth{
 			endpoint: authEndpoint,
 		},
-		credentials: Credentials(c.Credentials),
-		kind:       kind,
-		name:       c.Name,
-		httpClient: c.HttpClient,
+		credentials:    Credentials(c.Credentials),
+		kind:           kind,
+		name:           c.Name,
+		registryClient: c.RegistryClient,
+		httpClient:     &c.HttpClient,
 	}, nil
 
 }
@@ -108,6 +111,10 @@ func (r *Registry) Logout() error {
 	}
 
 	return nil
+}
+
+func (r *Registry) ListRepositories() ([]string, error) {
+	return r.registryClient.ListRepositories()
 }
 
 func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
@@ -223,12 +230,12 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 
 	switch r.kind {
 	case DockerHubContainerRegistry:
-		tags, err = listRepoTagsDockerHub(r.auth.endpoint, r.auth.token, repo, &r.httpClient)
+		tags, err = listRepoTagsDockerHub(r.auth.endpoint, r.auth.token, repo, r.httpClient)
 		if err != nil {
 			return false, microerror.Mask(err)
 		}
 	case AzureContainerRegistry:
-		tags, err = listRepoTagsAzureCR(r.auth.endpoint, r.auth.token, repo, &r.httpClient)
+		tags, err = listRepoTagsAzureCR(r.auth.endpoint, r.auth.token, repo, r.httpClient)
 		if err != nil {
 			return false, microerror.Mask(err)
 		}
