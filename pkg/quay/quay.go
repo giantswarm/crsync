@@ -114,7 +114,7 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 				break
 			}
 
-			resp, err := http.Get(nextEndpoint)
+			resp, err := http.Get(nextEndpoint) // #nosec G107
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
