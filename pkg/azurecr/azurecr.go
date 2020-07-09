@@ -26,6 +26,16 @@ type AzureCR struct {
 }
 
 func New(c Config) (*AzureCR, error) {
+	if c.RegistryName == "" {
+		return nil, microerror.Maskf(invalidConfigError, "RegistryName must not be empty")
+	}
+	if c.Credentials.User == "" {
+		return nil, microerror.Maskf(invalidConfigError, "User must not be empty")
+	}
+	if c.Credentials.Password == "" {
+		return nil, microerror.Maskf(invalidConfigError, "Password must not be empy")
+	}
+
 	httpClient := &http.Client{}
 
 	return &AzureCR{
@@ -46,7 +56,7 @@ func (d *AzureCR) Authorize() error {
 }
 
 func (d *AzureCR) ListRepositories() ([]string, error) {
-	return []string{}, nil
+	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
 func (d *AzureCR) ListTags(repository string) ([]string, error) {

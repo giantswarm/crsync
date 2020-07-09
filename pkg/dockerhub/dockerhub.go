@@ -29,6 +29,13 @@ type DockerHub struct {
 }
 
 func New(c Config) (*DockerHub, error) {
+	if c.Credentials.User == "" {
+		return nil, microerror.Maskf(invalidConfigError, "User must not be empty")
+	}
+	if c.Credentials.Password == "" {
+		return nil, microerror.Maskf(invalidConfigError, "Password must not be empy")
+	}
+
 	httpClient := &http.Client{}
 
 	return &DockerHub{
@@ -73,7 +80,7 @@ func (d *DockerHub) Authorize() error {
 }
 
 func (d *DockerHub) ListRepositories() ([]string, error) {
-	return []string{}, nil
+	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
 func (d *DockerHub) ListTags(repository string) ([]string, error) {

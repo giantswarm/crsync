@@ -79,7 +79,6 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	{
 		switch registryName := r.flag.DstRegistryName; {
 		case registryName == "docker.io":
-
 			registryClientConfig := dockerhub.Config{
 				Credentials: registry.Credentials{
 					User:     r.flag.DstRegistryUser,

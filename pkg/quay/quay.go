@@ -19,6 +19,11 @@ const (
 	tagLengthLimit = 20
 )
 
+type Config struct {
+	Namespace    string
+	LastModified time.Duration
+}
+
 type Quay struct {
 	namespace    string
 	lastModified time.Duration
@@ -26,22 +31,12 @@ type Quay struct {
 	httpClient *http.Client
 }
 
-type Config struct {
-	Namespace    string
-	LastModified time.Duration
-}
-
-type Repository struct {
-	Name         string `json:"name"`
-	LastModified int    `json:"last_modified"`
-}
-
-type RepositoriesJSON struct {
-	Repositories []Repository `json:"repositories"`
-}
-
 func New(c Config) (*Quay, error) {
 	httpClient := &http.Client{}
+
+	if c.Namespace == "" {
+		return nil, microerror.Maskf(invalidConfigError, "Namespace must not be empty")
+	}
 
 	return &Quay{
 		namespace:    c.Namespace,
@@ -91,8 +86,8 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	}
 
 	for _, repo := range data.Repositories {
-		lastModifiedTimestamp := int(time.Now().Add(-1 * q.lastModified).Unix())
-		if repo.LastModified > lastModifiedTimestamp {
+		lastModifiedTimestamp := time.Now().Add(-1 * q.lastModified).Unix()
+		if int64(repo.LastModified) > lastModifiedTimestamp {
 			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
 		}
 	}
@@ -115,20 +110,24 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 	{
 		nextEndpoint := endpoint
 		for {
-			resp, err := http.Get(nextEndpoint) // nolint
+			if nextEndpoint == "" {
+				break
+			}
+
+			resp, err := http.Get(nextEndpoint)
 			if err != nil {
-				return []string{}, microerror.Mask(err)
+				return nil, microerror.Mask(err)
 			}
 
 			defer resp.Body.Close()
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return []string{}, microerror.Mask(err)
+				return nil, microerror.Mask(err)
 			}
 
 			err = json.Unmarshal(body, &tagsData)
 			if err != nil {
-				return []string{}, microerror.Mask(err)
+				return nil, microerror.Mask(err)
 			}
 
 			for _, tag := range tagsData.Tags {
@@ -138,11 +137,7 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 			}
 
 			linkHeader := resp.Header.Get("Link")
-			if linkHeader != "" {
-				nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, getLink(linkHeader))
-			} else {
-				break
-			}
+			nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, getLink(linkHeader))
 		}
 	}
 
