@@ -1,37 +1,31 @@
 package registry
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
-	"sync"
 	"syscall"
-	"time"
 
 	"github.com/giantswarm/microerror"
 )
 
 const (
 	dockerBinaryName = "docker"
-	tagLengthLimit   = 15
 )
 
 type Config struct {
-	Credentials Credentials
-	Name        string
-	HttpClient  http.Client
+	Credentials    Credentials
+	Name           string
+	HttpClient     http.Client
+	RegistryClient RegistryClient
 }
 
 type Registry struct {
-	address     string
 	credentials Credentials
 	name        string
-	httpClient  http.Client
+
+	registryClient RegistryClient
 }
 
 type Credentials struct {
@@ -45,25 +39,10 @@ type Repository struct {
 }
 
 func New(c Config) (Registry, error) {
-
-	// docker is specific with urls
-	var registryAddress string
-	{
-		if c.Name == "docker.io" {
-			registryAddress = "https://index.docker.io"
-		} else {
-			registryAddress = fmt.Sprintf("https://%s", c.Name)
-		}
-	}
-
 	return Registry{
-		address: registryAddress,
-		credentials: Credentials{
-			User:     c.Credentials.User,
-			Password: c.Credentials.Password,
-		},
-		name:       c.Name,
-		httpClient: c.HttpClient,
+		credentials:    c.Credentials,
+		name:           c.Name,
+		registryClient: c.RegistryClient,
 	}, nil
 
 }
@@ -74,6 +53,11 @@ func (r *Registry) Login() error {
 	args := []string{"login", r.name, fmt.Sprintf("-u%s", r.credentials.User), fmt.Sprintf("-p%s", r.credentials.Password)}
 
 	err := executeCmd(dockerBinaryName, args)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = r.authorize()
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -100,54 +84,16 @@ func (r *Registry) Logout() error {
 	return nil
 }
 
-func (r *Registry) ListRepositoryTags(repo string) ([]string, error) {
-	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repo)
+func (r *Registry) authorize() error {
+	return r.registryClient.Authorize()
+}
 
-	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", r.address, repo)
+func (r *Registry) ListRepositories() ([]string, error) {
+	return r.registryClient.ListRepositories()
+}
 
-	type tagsJSON struct {
-		Tags []string `json:"tags"`
-	}
-
-	var tagsData tagsJSON
-
-	var tags []string
-	{
-		nextEndpoint := endpoint
-		for {
-			resp, err := http.Get(nextEndpoint) // nolint
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			err = json.Unmarshal(body, &tagsData)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			for _, tag := range tagsData.Tags {
-				if len(tag) < tagLengthLimit {
-					tags = append(tags, tag)
-				}
-			}
-
-			linkHeader := resp.Header.Get("Link")
-			if linkHeader != "" {
-				nextEndpoint = fmt.Sprintf("%s%s", r.address, getLink(linkHeader))
-			} else {
-				break
-			}
-		}
-	}
-
-	return tags, nil
-
+func (r *Registry) ListTags(repository string) ([]string, error) {
+	return r.registryClient.ListTags(repository)
 }
 
 func (r *Registry) PullImage(repo, tag string) error {
@@ -208,46 +154,15 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 }
 
 func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
-	var imageExists bool
+	var tags []string
+	var err error
 
-	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
+	tags, err = r.ListTags(repo)
+	if err != nil {
+		return false, microerror.Mask(err)
+	}
 
-	args := []string{"pull", image}
-
-	cmd := exec.Command(
-		dockerBinaryName,
-		args...,
-	)
-
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-
-	go func() {
-		_ = cmd.Run()
-	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		for outb.String() == "" && errb.String() == "" {
-			time.Sleep(time.Millisecond * 10)
-		}
-
-		if errb.Len() > 0 {
-			imageExists = false
-		} else {
-			imageExists = true
-		}
-
-		_ = cmd.Process.Kill()
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	return imageExists, nil
+	return stringInSlice(tag, tags), nil
 }
 
 func binaryExists() bool {
@@ -283,22 +198,14 @@ func executeCmd(binary string, args []string) error {
 		return microerror.Mask(err)
 	}
 
-	time.Sleep(time.Second * 1)
-
 	return nil
 }
 
-func getLink(linkHeader string) string {
-	start := "<"
-	end := ">"
-	s := strings.Index(linkHeader, start)
-	if s == -1 {
-		return ""
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
 	}
-	s += len(start)
-	e := strings.Index(linkHeader, end)
-	if e == -1 {
-		return ""
-	}
-	return linkHeader[s:e]
+	return false
 }

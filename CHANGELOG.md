@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Use authenticated API calls to get list of existing tags in destination repository.
+
 ## [0.2.0] - 2020-07-03
 
 ### Changed

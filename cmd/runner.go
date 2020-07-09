@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
+	"strings"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
 
 	"github.com/giantswarm/crsync/internal/key"
-	"github.com/giantswarm/crsync/pkg/quayio"
+	"github.com/giantswarm/crsync/pkg/azurecr"
+	"github.com/giantswarm/crsync/pkg/dockerhub"
+	"github.com/giantswarm/crsync/pkg/quay"
 	"github.com/giantswarm/crsync/pkg/registry"
 )
 
@@ -47,9 +49,19 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	var srcRegistry registry.Registry
 	{
+		registryClientConfig := quay.Config{
+			Namespace:    key.Namespace,
+			LastModified: r.flag.LastModified,
+		}
+
+		registryClient, err := quay.New(registryClientConfig)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		config := registry.Config{
-			Name:       sourceRegistryName,
-			HttpClient: http.Client{},
+			Name:           sourceRegistryName,
+			RegistryClient: registryClient,
 		}
 
 		srcRegistry, err = registry.New(config)
@@ -58,9 +70,43 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	reposToSync, err := quayio.ListRepositories(key.Namespace, r.flag.LastModified)
+	reposToSync, err := srcRegistry.ListRepositories()
 	if err != nil {
 		return microerror.Mask(err)
+	}
+
+	var registryClient registry.RegistryClient
+	{
+		switch registryName := r.flag.DstRegistryName; {
+		case registryName == "docker.io":
+			registryClientConfig := dockerhub.Config{
+				Credentials: registry.Credentials{
+					User:     r.flag.DstRegistryUser,
+					Password: r.flag.DstRegistryPassword,
+				},
+			}
+
+			registryClient, err = dockerhub.New(registryClientConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+		case strings.HasSuffix(registryName, "azurecr.io"):
+			registryClientConfig := azurecr.Config{
+				Credentials: registry.Credentials{
+					User:     r.flag.DstRegistryUser,
+					Password: r.flag.DstRegistryPassword,
+				},
+				RegistryName: r.flag.DstRegistryName,
+			}
+
+			registryClient, err = azurecr.New(registryClientConfig)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+		default:
+			return microerror.Maskf(executionFailedError, "unknown container registry %#q", registryName)
+		}
 	}
 
 	var dstRegistry registry.Registry
@@ -71,7 +117,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				User:     r.flag.DstRegistryUser,
 				Password: r.flag.DstRegistryPassword,
 			},
-			HttpClient: http.Client{},
+			RegistryClient: registryClient,
 		}
 
 		dstRegistry, err = registry.New(config)
@@ -89,7 +135,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
-		tags, err := srcRegistry.ListRepositoryTags(repo)
+		tags, err := srcRegistry.ListTags(repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
