@@ -110,10 +110,6 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 	{
 		nextEndpoint := endpoint
 		for {
-			if nextEndpoint == "" {
-				break
-			}
-
 			resp, err := http.Get(nextEndpoint) // #nosec G107
 			if err != nil {
 				return nil, microerror.Mask(err)
@@ -137,6 +133,10 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 			}
 
 			linkHeader := resp.Header.Get("Link")
+			if linkHeader == "" {
+				break
+			}
+
 			nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, getLink(linkHeader))
 		}
 	}
