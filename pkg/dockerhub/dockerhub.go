@@ -30,10 +30,10 @@ type DockerHub struct {
 
 func New(c Config) (*DockerHub, error) {
 	if c.Credentials.User == "" {
-		return nil, microerror.Maskf(invalidConfigError, "User must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.User must not be empty", c)
 	}
 	if c.Credentials.Password == "" {
-		return nil, microerror.Maskf(invalidConfigError, "Password must not be empy")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Password must not be empty", c)
 	}
 
 	httpClient := &http.Client{}
