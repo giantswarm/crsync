@@ -26,7 +26,6 @@ type Registry struct {
 	name        string
 
 	registryClient RegistryClient
-	httpClient     *http.Client
 }
 
 type Credentials struct {
@@ -44,7 +43,6 @@ func New(c Config) (Registry, error) {
 		credentials:    c.Credentials,
 		name:           c.Name,
 		registryClient: c.RegistryClient,
-		httpClient:     &c.HttpClient,
 	}, nil
 
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"github.com/giantswarm/microerror"
@@ -62,7 +61,6 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 		config := registry.Config{
 			Name:           sourceRegistryName,
-			HttpClient:     http.Client{},
 			RegistryClient: registryClient,
 		}
 
@@ -121,7 +119,6 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				Password: r.flag.DstRegistryPassword,
 			},
 			RegistryClient: registryClient,
-			HttpClient:     http.Client{},
 		}
 
 		dstRegistry, err = registry.New(config)
