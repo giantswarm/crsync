@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"syscall"
 
 	"github.com/giantswarm/microerror"
 )
@@ -170,11 +169,6 @@ func binaryExists() bool {
 	err := cmd.Run()
 
 	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			if exitError.Sys().(syscall.WaitStatus).ExitStatus() == 0 {
-				return true
-			}
-		}
 		return false
 	}
 	return true
