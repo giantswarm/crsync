@@ -1,9 +1,9 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 
 	"github.com/giantswarm/microerror"
@@ -164,32 +164,21 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 	return stringInSlice(tag, tags), nil
 }
 
-func binaryExists() bool {
-	cmd := exec.Command(dockerBinaryName)
-	err := cmd.Run()
-
-	if err != nil {
-		return false
-	}
-	return true
-}
-
 func executeCmd(binary string, args []string) error {
-	if !binaryExists() {
-		return microerror.Mask(executionFailedError)
-	}
-
 	cmd := exec.Command(
 		binary,
 		args...,
 	)
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	var exitCode int = -1
+	var exitErr *exec.ExitError
 
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if errors.As(err, &exitErr) {
+		exitCode = exitErr.ExitCode()
+	}
 	if err != nil {
-		return microerror.Mask(err)
+		return microerror.Maskf(executionFailedError, "command execution failed with exit code = %d error = %#q and output: %#q", exitCode, err, output)
 	}
 
 	return nil

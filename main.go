@@ -14,7 +14,7 @@ import (
 func main() {
 	err := mainE(context.Background())
 	if err != nil {
-		panic(fmt.Sprintf("%#v\n", microerror.JSON(err)))
+		panic(fmt.Sprintf("%s\n", microerror.JSON(err)))
 	}
 }
 
