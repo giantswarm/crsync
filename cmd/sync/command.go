@@ -1,4 +1,4 @@
-package cmd
+package sync
 
 import (
 	"io"
@@ -7,13 +7,11 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
-
-	"github.com/giantswarm/crsync/cmd/sync"
 )
 
 const (
-	name        = "crsync"
-	description = "CLI tool to sync images between registries"
+	name        = "sync"
+	description = "Synchronize container images between registries."
 )
 
 type Config struct {
@@ -33,22 +31,6 @@ func New(config Config) (*cobra.Command, error) {
 		config.Stdout = os.Stdout
 	}
 
-	var err error
-
-	var syncCmd *cobra.Command
-	{
-		c := sync.Config{
-			Logger: config.Logger,
-			Stderr: config.Stderr,
-			Stdout: config.Stdout,
-		}
-
-		syncCmd, err = sync.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
 	f := &flag{}
 
 	r := &runner{
@@ -59,16 +41,13 @@ func New(config Config) (*cobra.Command, error) {
 	}
 
 	c := &cobra.Command{
-		Use:          name,
-		Short:        description,
-		Long:         description,
-		RunE:         r.Run,
-		SilenceUsage: true,
+		Use:   name,
+		Short: description,
+		Long:  description,
+		RunE:  r.Run,
 	}
 
 	f.Init(c)
-
-	c.AddCommand(syncCmd)
 
 	return c, nil
 }
