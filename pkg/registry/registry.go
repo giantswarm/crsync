@@ -178,7 +178,7 @@ func executeCmd(binary string, args []string) error {
 		exitCode = exitErr.ExitCode()
 	}
 	if err != nil {
-		return microerror.Maskf(executionFailedError, "command execution failed with exit code = %d error = %#q and output = %#q", exitCode, err, output)
+		return microerror.Maskf(executionFailedError, "command execution failed with exit code = %d error = %#q and output:\n\n%s", exitCode, err, output)
 	}
 
 	return nil
