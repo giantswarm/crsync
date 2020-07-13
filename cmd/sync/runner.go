@@ -152,35 +152,33 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				continue
 			}
 
-			if !tagExists {
-				fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` is missing.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
+			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` is missing.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
 
-				err := srcRegistry.PullImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = srcRegistry.RemoveImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = dstRegistry.PushImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = dstRegistry.RemoveImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
+			err = srcRegistry.PullImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
 			}
+
+			err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			err = srcRegistry.RemoveImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			err = dstRegistry.PushImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+			err = dstRegistry.RemoveImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
 		}
 	}
 
