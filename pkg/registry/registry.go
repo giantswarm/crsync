@@ -15,22 +15,15 @@ const (
 )
 
 type Config struct {
-	Credentials    Credentials
 	Name           string
 	HttpClient     http.Client
 	RegistryClient RegistryClient
 }
 
 type Registry struct {
-	credentials Credentials
-	name        string
+	name string
 
 	registryClient RegistryClient
-}
-
-type Credentials struct {
-	User     string
-	Password string
 }
 
 type Repository struct {
@@ -40,24 +33,23 @@ type Repository struct {
 
 func New(c Config) (Registry, error) {
 	return Registry{
-		credentials:    c.Credentials,
 		name:           c.Name,
 		registryClient: c.RegistryClient,
 	}, nil
 
 }
 
-func (r *Registry) Login() error {
+func (r *Registry) Login(user, password string) error {
 	fmt.Printf("Logging in destination container registry...\n")
 
-	args := []string{"login", r.name, fmt.Sprintf("-u%s", r.credentials.User), fmt.Sprintf("-p%s", r.credentials.Password)}
+	args := []string{"login", r.name, "-u", user, "-p", password}
 
 	err := executeCmd(dockerBinaryName, args)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	err = r.authorize()
+	err = r.authorize(user, password)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -84,8 +76,8 @@ func (r *Registry) Logout() error {
 	return nil
 }
 
-func (r *Registry) authorize() error {
-	return r.registryClient.Authorize()
+func (r *Registry) authorize(user, password string) error {
+	return r.registryClient.Authorize(user, password)
 }
 
 func (r *Registry) ListRepositories() ([]string, error) {
