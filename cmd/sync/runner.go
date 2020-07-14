@@ -135,54 +135,69 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
-		tags, err := srcRegistry.ListTags(repo)
+		srcTags, err := srcRegistry.ListTags(repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		fmt.Printf("There are %d tags in %s repository.\n", len(tags), repo)
+		dstTags, err := dstRegistry.ListTags(repo)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 
-		for tagIndex, tag := range tags {
-			tagExists, err := dstRegistry.RepositoryTagExists(repo, tag)
+		tagsToSync := sliceDiff(srcTags, dstTags)
+
+		fmt.Printf("There are %d tags to sync in %s repository.\n", len(tagsToSync), repo)
+
+		for tagIndex, tag := range tagsToSync {
+
+			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s`.\n\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag)
+
+			err := srcRegistry.PullImage(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
-			if tagExists {
-				fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` already exists.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
-				continue
+
+			err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
+			if err != nil {
+				return microerror.Mask(err)
 			}
 
-			if !tagExists {
-				fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s` is missing.\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tags), r.flag.DstRegistryName, repo, tag)
+			err = srcRegistry.RemoveImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-				err := srcRegistry.PullImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
+			err = dstRegistry.PushImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 
-				err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = srcRegistry.RemoveImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = dstRegistry.PushImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
-				err = dstRegistry.RemoveImage(repo, tag)
-				if err != nil {
-					return microerror.Mask(err)
-				}
-
+			err = dstRegistry.RemoveImage(repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
 			}
 		}
 	}
 
 	return nil
+}
+
+func sliceDiff(s1, s2 []string) []string {
+	var result []string
+
+	for _, e1 := range s1 {
+		found := false
+		for _, e2 := range s2 {
+			if e1 == e2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result = append(result, e1)
+		}
+	}
+
+	return result
 }
