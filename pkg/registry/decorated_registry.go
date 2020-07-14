@@ -50,8 +50,8 @@ func NewDecoratedRegistry(config DecoratedRegistryConfig) (*DecoratedRegistry, e
 	return r, nil
 }
 
-func (r *DecoratedRegistry) Login(ctx context.Context) error {
-	return microerror.Mask(r.underlying.Login(ctx))
+func (r *DecoratedRegistry) Login(ctx context.Context, user, password string) error {
+	return microerror.Mask(r.underlying.Login(ctx, user, password))
 }
 
 func (r *DecoratedRegistry) Logout(ctx context.Context) error {
