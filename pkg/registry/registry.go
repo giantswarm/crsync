@@ -40,8 +40,6 @@ func New(c Config) (*Registry, error) {
 }
 
 func (r *Registry) Login(ctx context.Context, user, password string) error {
-	fmt.Printf("Logging in destination container registry...\n")
-
 	args := []string{"login", r.name, "-u", user, "-p", password}
 
 	err := executeCmd(dockerBinaryName, args)
@@ -58,8 +56,6 @@ func (r *Registry) Login(ctx context.Context, user, password string) error {
 }
 
 func (r *Registry) Logout(ctx context.Context) error {
-	fmt.Printf("Logging out of destination container registry...\n")
-
 	var args []string
 
 	if r.name == "" {
@@ -130,8 +126,6 @@ func (r *Registry) RemoveImage(ctx context.Context, repo, tag string) error {
 func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	srcImage := fmt.Sprintf("%s/%s:%s", srcRegistry, repo, tag)
 	dstImage := fmt.Sprintf("%s/%s:%s", dstRegistry, repo, tag)
-
-	fmt.Printf("Retagging image %#q into %#q\n", srcImage, dstImage)
 
 	args := []string{"tag", srcImage, dstImage}
 
