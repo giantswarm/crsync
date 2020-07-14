@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"strings"
+	"syscall"
 
 	"github.com/giantswarm/microerror"
 )
@@ -162,6 +164,36 @@ func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
 	}
 
 	return stringInSlice(tag, tags), nil
+}
+
+func GetLink(linkHeader string) string {
+	start := "<"
+	end := ">"
+	s := strings.Index(linkHeader, start)
+	if s == -1 {
+		return ""
+	}
+	s += len(start)
+	e := strings.Index(linkHeader, end)
+	if e == -1 {
+		return ""
+	}
+	return linkHeader[s:e]
+}
+
+func binaryExists() bool {
+	cmd := exec.Command(dockerBinaryName)
+	err := cmd.Run()
+
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if exitError.Sys().(syscall.WaitStatus).ExitStatus() == 0 {
+				return true
+			}
+		}
+		return false
+	}
+	return true
 }
 
 func executeCmd(binary string, args []string) error {

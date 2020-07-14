@@ -67,28 +67,43 @@ func (d *AzureCR) ListTags(repository string) ([]string, error) {
 	}
 
 	var tagsJSON azureCRTags
-	req, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
+	var tags []string
+	{
+		nextEndpoint := endpoint
+
+		for {
+			req, err := http.NewRequest("GET", nextEndpoint, nil)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			req.Header.Set("Authorization", fmt.Sprintf("basic %s", d.token))
+
+			resp, err := d.httpClient.Do(req)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			err = json.Unmarshal(body, &tagsJSON)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+			tags = append(tags, tagsJSON.Tags...)
+
+			linkHeader := resp.Header.Get("Link")
+			if linkHeader == "" {
+				break
+			}
+
+			nextEndpoint = fmt.Sprintf("%s%s", d.registryEndpoint, registry.GetLink(linkHeader))
+		}
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("basic %s", d.token))
-
-	resp, err := d.httpClient.Do(req)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	err = json.Unmarshal(body, &tagsJSON)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	return tagsJSON.Tags, nil
+	return tags, nil
 }
