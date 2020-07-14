@@ -124,9 +124,7 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 				return nil, microerror.Mask(err)
 			}
 
-			for _, tag := range tagsData.Tags {
-				tags = append(tags, tag)
-			}
+			tags = append(tags, tagsData.Tags...)
 
 			linkHeader := resp.Header.Get("Link")
 			if linkHeader == "" {
