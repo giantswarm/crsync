@@ -1,10 +1,12 @@
 package registry
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"os/exec"
+	"strings"
 
 	"github.com/giantswarm/microerror"
 )
@@ -37,7 +39,7 @@ func New(c Config) (*Registry, error) {
 	}, nil
 }
 
-func (r *Registry) Login(user, password string) error {
+func (r *Registry) Login(ctx context.Context, user, password string) error {
 	fmt.Printf("Logging in destination container registry...\n")
 
 	args := []string{"login", r.name, "-u", user, "-p", password}
@@ -55,7 +57,7 @@ func (r *Registry) Login(user, password string) error {
 	return nil
 }
 
-func (r *Registry) Logout() error {
+func (r *Registry) Logout(ctx context.Context) error {
 	fmt.Printf("Logging out of destination container registry...\n")
 
 	var args []string
@@ -78,15 +80,15 @@ func (r *Registry) authorize(user, password string) error {
 	return r.registryClient.Authorize(user, password)
 }
 
-func (r *Registry) ListRepositories() ([]string, error) {
+func (r *Registry) ListRepositories(ctx context.Context) ([]string, error) {
 	return r.registryClient.ListRepositories()
 }
 
-func (r *Registry) ListTags(repository string) ([]string, error) {
+func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
 	return r.registryClient.ListTags(repository)
 }
 
-func (r *Registry) Pull(repo, tag string) error {
+func (r *Registry) Pull(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"pull", image}
@@ -99,7 +101,7 @@ func (r *Registry) Pull(repo, tag string) error {
 	return nil
 }
 
-func (r *Registry) Push(repo, tag string) error {
+func (r *Registry) Push(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"push", image}
@@ -112,7 +114,7 @@ func (r *Registry) Push(repo, tag string) error {
 	return nil
 }
 
-func (r *Registry) RemoveImage(repo, tag string) error {
+func (r *Registry) RemoveImage(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"rmi", image}
@@ -126,9 +128,7 @@ func (r *Registry) RemoveImage(repo, tag string) error {
 }
 
 func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
-
 	srcImage := fmt.Sprintf("%s/%s:%s", srcRegistry, repo, tag)
-
 	dstImage := fmt.Sprintf("%s/%s:%s", dstRegistry, repo, tag)
 
 	fmt.Printf("Retagging image %#q into %#q\n", srcImage, dstImage)
@@ -141,6 +141,21 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	}
 
 	return nil
+}
+
+func GetLink(linkHeader string) string {
+	start := "<"
+	end := ">"
+	s := strings.Index(linkHeader, start)
+	if s == -1 {
+		return ""
+	}
+	s += len(start)
+	e := strings.Index(linkHeader, end)
+	if e == -1 {
+		return ""
+	}
+	return linkHeader[s:e]
 }
 
 func executeCmd(binary string, args []string) error {
