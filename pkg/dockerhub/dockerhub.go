@@ -74,9 +74,9 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/", authEndpoint, repository)
 
 	type dockerHubTags struct {
-		Next    string `yaml:"next"`
+		Next    string `json:"next"`
 		Results []struct {
-			Name string `yaml:"name"`
+			Name string `json:"name"`
 		}
 	}
 
