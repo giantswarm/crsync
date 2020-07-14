@@ -15,8 +15,6 @@ const (
 	publicImagesOnly   = true
 	registryEndpoint   = "https://quay.io"
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
-
-	tagLengthLimit = 20
 )
 
 type Config struct {
@@ -126,11 +124,7 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 				return nil, microerror.Mask(err)
 			}
 
-			for _, tag := range tagsData.Tags {
-				if len(tag) < tagLengthLimit {
-					tags = append(tags, tag)
-				}
-			}
+			tags = append(tags, tagsData.Tags...)
 
 			linkHeader := resp.Header.Get("Link")
 			if linkHeader == "" {
