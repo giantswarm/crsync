@@ -59,7 +59,12 @@ func (r *DecoratedRegistry) Logout(ctx context.Context) error {
 }
 
 func (r *DecoratedRegistry) ListRepositories(ctx context.Context) ([]string, error) {
-	r.rateLimiter.ListRepositories.Wait(ctx)
+	var err error
+
+	err = r.rateLimiter.ListRepositories.Wait(ctx)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
 
 	rs, err := r.underlying.ListRepositories(ctx)
 	if err != nil {
@@ -70,7 +75,12 @@ func (r *DecoratedRegistry) ListRepositories(ctx context.Context) ([]string, err
 }
 
 func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
-	r.rateLimiter.ListTags.Wait(ctx)
+	var err error
+
+	err = r.rateLimiter.ListTags.Wait(ctx)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
 
 	ts, err := r.underlying.ListTags(ctx, repository)
 	if err != nil {
@@ -80,9 +90,14 @@ func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string) ([]
 	return ts, nil
 }
 func (r *DecoratedRegistry) Pull(ctx context.Context, repo, tag string) error {
-	r.rateLimiter.Pull.Wait(ctx)
+	var err error
 
-	err := r.underlying.Pull(ctx, repo, tag)
+	err = r.rateLimiter.Pull.Wait(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = r.underlying.Pull(ctx, repo, tag)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -91,9 +106,14 @@ func (r *DecoratedRegistry) Pull(ctx context.Context, repo, tag string) error {
 }
 
 func (r *DecoratedRegistry) Push(ctx context.Context, repo, tag string) error {
-	r.rateLimiter.Push.Wait(ctx)
+	var err error
 
-	err := r.underlying.Push(ctx, repo, tag)
+	err = r.rateLimiter.Push.Wait(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = r.underlying.Push(ctx, repo, tag)
 	if err != nil {
 		return microerror.Mask(err)
 	}
