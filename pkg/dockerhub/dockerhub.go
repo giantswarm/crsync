@@ -71,42 +71,54 @@ func (d *DockerHub) ListRepositories() ([]string, error) {
 }
 
 func (d *DockerHub) ListTags(repository string) ([]string, error) {
-	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/?page_size=10000", authEndpoint, repository)
+	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/", authEndpoint, repository)
 
 	type dockerHubTags struct {
+		Next    string `yaml:"next"`
 		Results []struct {
 			Name string `yaml:"name"`
 		}
 	}
 
 	var tagsJSON dockerHubTags
-	req, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("JWT %s", d.token))
-
-	resp, err := d.httpClient.Do(req)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
-	err = json.Unmarshal(body, &tagsJSON)
-	if err != nil {
-		return []string{}, microerror.Mask(err)
-	}
-
 	var tags []string
 	{
-		for _, tag := range tagsJSON.Results {
-			tags = append(tags, tag.Name)
+		nextEndpoint := endpoint
+
+		for {
+
+			req, err := http.NewRequest("GET", nextEndpoint, nil)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			req.Header.Set("Authorization", fmt.Sprintf("JWT %s", d.token))
+
+			resp, err := d.httpClient.Do(req)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			err = json.Unmarshal(body, &tagsJSON)
+			if err != nil {
+				return []string{}, microerror.Mask(err)
+			}
+
+			for _, tag := range tagsJSON.Results {
+				tags = append(tags, tag.Name)
+			}
+
+			if tagsJSON.Next == nextEndpoint {
+				break
+			}
+
+			nextEndpoint = tagsJSON.Next
 		}
 	}
 
