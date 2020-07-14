@@ -60,7 +60,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	var srcRegistry *registry.Registry
+	var srcRegistry registry.Interface
 	{
 		c := registry.Config{
 			Name:           sourceRegistryName,
@@ -98,7 +98,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	var dstRegistry *registry.Registry
+	var dstRegistry registry.Interface
 	{
 		config := registry.Config{
 			Name:           r.flag.DstRegistryName,
@@ -111,13 +111,13 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	defer func() { _ = dstRegistry.Logout() }()
-	err = dstRegistry.Login(r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
+	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 	if err != nil {
 		return microerror.Mask(err)
 	}
+	defer func(ctx context.Context) { _ = dstRegistry.Logout(ctx) }(ctx)
 
-	reposToSync, err := srcRegistry.ListRepositories()
+	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -125,12 +125,12 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
-		srcTags, err := srcRegistry.ListTags(repo)
+		srcTags, err := srcRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		dstTags, err := dstRegistry.ListTags(repo)
+		dstTags, err := dstRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -147,7 +147,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s`.\n\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag)
 
-			err := srcRegistry.Pull(repo, tag)
+			err := srcRegistry.Pull(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -157,17 +157,17 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 
-			err = srcRegistry.RemoveImage(repo, tag)
+			err = srcRegistry.RemoveImage(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 
-			err = dstRegistry.Push(repo, tag)
+			err = dstRegistry.Push(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 
-			err = dstRegistry.RemoveImage(repo, tag)
+			err = dstRegistry.RemoveImage(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
