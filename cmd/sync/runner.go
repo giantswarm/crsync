@@ -21,8 +21,6 @@ import (
 
 const (
 	sourceRegistryName = "quay.io"
-
-	pullPushBurst = 30
 )
 
 type runner struct {
@@ -219,8 +217,8 @@ func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, 
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
 			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), 1),
 			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), 1),
-			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
-			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
+			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
+			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
 		},
 		Underlying: reg,
 	}
