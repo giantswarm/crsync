@@ -147,6 +147,10 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 		tagsToSync := sliceDiff(srcTags, dstTags)
 
+		if len(tagsToSync) == 0 {
+			continue
+		}
+
 		fmt.Printf("There are %d tags to sync in %s repository.\n", len(tagsToSync), repo)
 
 		for tagIndex, tag := range tagsToSync {
