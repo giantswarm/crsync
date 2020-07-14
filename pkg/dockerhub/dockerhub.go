@@ -114,7 +114,7 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 				tags = append(tags, tag.Name)
 			}
 
-			if tagsJSON.Next == nextEndpoint {
+			if tagsJSON.Next == "" || tagsJSON.Next == nextEndpoint {
 				break
 			}
 
