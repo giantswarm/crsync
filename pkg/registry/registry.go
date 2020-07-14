@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"strings"
 
 	"github.com/giantswarm/microerror"
 )
@@ -140,6 +141,21 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	}
 
 	return nil
+}
+
+func GetLink(linkHeader string) string {
+	start := "<"
+	end := ">"
+	s := strings.Index(linkHeader, start)
+	if s == -1 {
+		return ""
+	}
+	s += len(start)
+	e := strings.Index(linkHeader, end)
+	if e == -1 {
+		return ""
+	}
+	return linkHeader[s:e]
 }
 
 func executeCmd(binary string, args []string) error {

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (
@@ -131,25 +132,10 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 				break
 			}
 
-			nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, getLink(linkHeader))
+			nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, registry.GetLink(linkHeader))
 		}
 	}
 
 	return tags, nil
 
-}
-
-func getLink(linkHeader string) string {
-	start := "<"
-	end := ">"
-	s := strings.Index(linkHeader, start)
-	if s == -1 {
-		return ""
-	}
-	s += len(start)
-	e := strings.Index(linkHeader, end)
-	if e == -1 {
-		return ""
-	}
-	return linkHeader[s:e]
 }
