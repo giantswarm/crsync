@@ -95,8 +95,6 @@ func (q *Quay) ListRepositories() ([]string, error) {
 }
 
 func (q *Quay) ListTags(repository string) ([]string, error) {
-	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repository)
-
 	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", registryEndpoint, repository)
 
 	type tagsJSON struct {

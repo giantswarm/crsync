@@ -134,11 +134,16 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
 	var err error
 
+	fmt.Printf("Logging in destination container registry...\n")
 	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	defer func(ctx context.Context) { _ = dstRegistry.Logout(ctx) }(ctx)
+	defer func(ctx context.Context) {
+		fmt.Println()
+		fmt.Printf("Logging out of destination container registry...\n")
+		_ = dstRegistry.Logout(ctx)
+	}(ctx)
 
 	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
@@ -148,11 +153,14 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
+		fmt.Println()
+		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
 		srcTags, err := srcRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from destination registry...\n", repoIndex+1, len(reposToSync), repo)
 		dstTags, err := dstRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
@@ -160,11 +168,7 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 		tagsToSync := sliceDiff(srcTags, dstTags)
 
-		if len(tagsToSync) == 0 {
-			continue
-		}
-
-		fmt.Printf("There are %d tags to sync in %s repository.\n", len(tagsToSync), repo)
+		fmt.Printf("Repository [%d/%d] = %#q: There are %d tags to sync.\n", repoIndex+1, len(reposToSync), repo, len(tagsToSync))
 
 		for tagIndex, tag := range tagsToSync {
 			job := retagJob{
@@ -176,10 +180,14 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 				Tag:  tag,
 			}
 
+			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging from %#q to %#q...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag, sourceRegistryName, r.flag.DstRegistryName)
+
 			err := r.processRetagJob(ctx, job)
 			if err != nil {
 				return microerror.Mask(err)
 			}
+
+			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagged.\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
 		}
 	}
 
