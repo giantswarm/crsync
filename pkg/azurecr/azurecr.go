@@ -8,6 +8,8 @@ import (
 	"net/http"
 
 	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 type Config struct {
