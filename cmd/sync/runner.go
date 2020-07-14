@@ -165,7 +165,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 
 		for _, tag := range tagsToSync {
-			if repo == "crsync" {
+			if repo == "giantswarm/crsync" {
 				continue
 			}
 
