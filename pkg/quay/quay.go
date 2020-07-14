@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/giantswarm/crsync/pkg/registry"
 	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (

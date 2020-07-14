@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/giantswarm/microerror"
 )
@@ -179,21 +178,6 @@ func GetLink(linkHeader string) string {
 		return ""
 	}
 	return linkHeader[s:e]
-}
-
-func binaryExists() bool {
-	cmd := exec.Command(dockerBinaryName)
-	err := cmd.Run()
-
-	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			if exitError.Sys().(syscall.WaitStatus).ExitStatus() == 0 {
-				return true
-			}
-		}
-		return false
-	}
-	return true
 }
 
 func executeCmd(binary string, args []string) error {
