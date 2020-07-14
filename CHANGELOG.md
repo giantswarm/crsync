@@ -9,10 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add parallel pushing/pulling in `sync` command.
+
 ### Changed
 
 - Move sychronization logic into `sync` sub-command.
 - Synchronize all tags instead of just releases.
+
+### Fixed
+
 - Fix tags listing in azure container registry.
 - Fix tags listing in dockerhub container registry.
 
