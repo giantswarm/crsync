@@ -45,12 +45,12 @@ func New(c Config) (*Quay, error) {
 	}, nil
 }
 
-func (q *Quay) Authorize() error {
-	return nil
+func (q *Quay) Authorize(user, password string) error {
+	return microerror.Maskf(executionFailedError, "method not implemented")
 }
 
 func (q *Quay) ListRepositories() ([]string, error) {
-	fmt.Printf("Reading list of quay repostories in %#q namespace...\n", q.namespace)
+	fmt.Printf("Reading list of quay repositories in %#q namespace...\n", q.namespace)
 
 	var reposToSync []string
 

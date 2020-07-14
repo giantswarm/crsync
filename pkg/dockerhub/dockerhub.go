@@ -8,8 +8,6 @@ import (
 	"net/http"
 
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (
@@ -18,38 +16,27 @@ const (
 )
 
 type Config struct {
-	Credentials registry.Credentials
 }
 
 type DockerHub struct {
-	token       string
-	credentials registry.Credentials
+	token string
 
 	httpClient *http.Client
 }
 
 func New(c Config) (*DockerHub, error) {
-	if c.Credentials.User == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.User must not be empty", c)
-	}
-	if c.Credentials.Password == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Password must not be empty", c)
-	}
-
 	httpClient := &http.Client{}
 
 	return &DockerHub{
-		credentials: c.Credentials,
-
 		httpClient: httpClient,
 	}, nil
 }
 
-func (d *DockerHub) Authorize() error {
+func (d *DockerHub) Authorize(user, password string) error {
 
 	endpoint := fmt.Sprintf("%s/v2/users/login/", authEndpoint)
 
-	values := map[string]string{"username": d.credentials.User, "password": d.credentials.Password}
+	values := map[string]string{"username": user, "password": password}
 
 	jsonValues, _ := json.Marshal(values)
 

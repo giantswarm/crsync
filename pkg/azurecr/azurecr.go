@@ -8,18 +8,14 @@ import (
 	"net/http"
 
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 type Config struct {
-	Credentials  registry.Credentials
 	RegistryName string
 }
 
 type AzureCR struct {
 	token            string
-	credentials      registry.Credentials
 	registryEndpoint string
 
 	httpClient *http.Client
@@ -29,26 +25,19 @@ func New(c Config) (*AzureCR, error) {
 	if c.RegistryName == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.RegistryName must not be empty", c)
 	}
-	if c.Credentials.User == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.User must not be empty", c)
-	}
-	if c.Credentials.Password == "" {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Password must not be empty", c)
-	}
 
 	httpClient := &http.Client{}
 
 	return &AzureCR{
 		registryEndpoint: fmt.Sprintf("https://%s", c.RegistryName),
-		credentials:      c.Credentials,
 
 		httpClient: httpClient,
 	}, nil
 }
 
-func (d *AzureCR) Authorize() error {
+func (d *AzureCR) Authorize(user, password string) error {
 
-	b64creds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", d.credentials.User, d.credentials.Password)))
+	b64creds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, password)))
 
 	d.token = b64creds
 

@@ -47,59 +47,48 @@ func (r *runner) Run(cmd *cobra.Command, args []string) error {
 func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) error {
 	var err error
 
-	var srcRegistry registry.Registry
+	var srcRegistryClient registry.RegistryClient
 	{
-		registryClientConfig := quay.Config{
+		c := quay.Config{
 			Namespace:    key.Namespace,
 			LastModified: r.flag.LastModified,
 		}
 
-		registryClient, err := quay.New(registryClientConfig)
+		srcRegistryClient, err = quay.New(c)
 		if err != nil {
 			return microerror.Mask(err)
 		}
+	}
 
-		config := registry.Config{
+	var srcRegistry *registry.Registry
+	{
+		c := registry.Config{
 			Name:           sourceRegistryName,
-			RegistryClient: registryClient,
+			RegistryClient: srcRegistryClient,
 		}
 
-		srcRegistry, err = registry.New(config)
+		srcRegistry, err = registry.New(c)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 	}
 
-	reposToSync, err := srcRegistry.ListRepositories()
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	var registryClient registry.RegistryClient
+	var dstRegistryClient registry.RegistryClient
 	{
 		switch registryName := r.flag.DstRegistryName; {
 		case registryName == "docker.io":
-			registryClientConfig := dockerhub.Config{
-				Credentials: registry.Credentials{
-					User:     r.flag.DstRegistryUser,
-					Password: r.flag.DstRegistryPassword,
-				},
-			}
+			c := dockerhub.Config{}
 
-			registryClient, err = dockerhub.New(registryClientConfig)
+			dstRegistryClient, err = dockerhub.New(c)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 		case strings.HasSuffix(registryName, "azurecr.io"):
-			registryClientConfig := azurecr.Config{
-				Credentials: registry.Credentials{
-					User:     r.flag.DstRegistryUser,
-					Password: r.flag.DstRegistryPassword,
-				},
+			c := azurecr.Config{
 				RegistryName: r.flag.DstRegistryName,
 			}
 
-			registryClient, err = azurecr.New(registryClientConfig)
+			dstRegistryClient, err = azurecr.New(c)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -109,15 +98,11 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	var dstRegistry registry.Registry
+	var dstRegistry *registry.Registry
 	{
 		config := registry.Config{
-			Name: r.flag.DstRegistryName,
-			Credentials: registry.Credentials{
-				User:     r.flag.DstRegistryUser,
-				Password: r.flag.DstRegistryPassword,
-			},
-			RegistryClient: registryClient,
+			Name:           r.flag.DstRegistryName,
+			RegistryClient: dstRegistryClient,
 		}
 
 		dstRegistry, err = registry.New(config)
@@ -126,8 +111,13 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	defer dstRegistry.Logout() // nolint
-	err = dstRegistry.Login()
+	defer func() { _ = dstRegistry.Logout() }()
+	err = dstRegistry.Login(r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	reposToSync, err := srcRegistry.ListRepositories()
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -157,7 +147,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s`.\n\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag)
 
-			err := srcRegistry.PullImage(repo, tag)
+			err := srcRegistry.Pull(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -172,7 +162,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 
-			err = dstRegistry.PushImage(repo, tag)
+			err = dstRegistry.Push(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
