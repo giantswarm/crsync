@@ -30,12 +30,11 @@ type Repository struct {
 	Tags []string
 }
 
-func New(c Config) (Registry, error) {
-	return Registry{
+func New(c Config) (*Registry, error) {
+	return &Registry{
 		name:           c.Name,
 		registryClient: c.RegistryClient,
 	}, nil
-
 }
 
 func (r *Registry) Login(user, password string) error {
@@ -87,7 +86,7 @@ func (r *Registry) ListTags(repository string) ([]string, error) {
 	return r.registryClient.ListTags(repository)
 }
 
-func (r *Registry) PullImage(repo, tag string) error {
+func (r *Registry) Pull(repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"pull", image}
@@ -100,7 +99,7 @@ func (r *Registry) PullImage(repo, tag string) error {
 	return nil
 }
 
-func (r *Registry) PushImage(repo, tag string) error {
+func (r *Registry) Push(repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
 	args := []string{"push", image}
@@ -144,18 +143,6 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	return nil
 }
 
-func (r *Registry) RepositoryTagExists(repo, tag string) (bool, error) {
-	var tags []string
-	var err error
-
-	tags, err = r.ListTags(repo)
-	if err != nil {
-		return false, microerror.Mask(err)
-	}
-
-	return stringInSlice(tag, tags), nil
-}
-
 func executeCmd(binary string, args []string) error {
 	cmd := exec.Command(
 		binary,
@@ -174,13 +161,4 @@ func executeCmd(binary string, args []string) error {
 	}
 
 	return nil
-}
-
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }

@@ -60,7 +60,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	var srcRegistry registry.Registry
+	var srcRegistry *registry.Registry
 	{
 		c := registry.Config{
 			Name:           sourceRegistryName,
@@ -98,7 +98,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	var dstRegistry registry.Registry
+	var dstRegistry *registry.Registry
 	{
 		config := registry.Config{
 			Name:           r.flag.DstRegistryName,
@@ -147,7 +147,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s`.\n\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag)
 
-			err := srcRegistry.PullImage(repo, tag)
+			err := srcRegistry.Pull(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -162,7 +162,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 
-			err = dstRegistry.PushImage(repo, tag)
+			err = dstRegistry.Push(repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
