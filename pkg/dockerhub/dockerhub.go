@@ -86,6 +86,7 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 		nextEndpoint := endpoint
 
 		for {
+
 			req, err := http.NewRequest("GET", nextEndpoint, nil)
 			if err != nil {
 				return []string{}, microerror.Mask(err)
@@ -113,7 +114,7 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 				tags = append(tags, tag.Name)
 			}
 
-			if tagsJSON.Next == "" {
+			if tagsJSON.Next == "" || tagsJSON.Next == nextEndpoint {
 				break
 			}
 
