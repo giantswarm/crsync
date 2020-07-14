@@ -157,16 +157,18 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 
-			err = srcRegistry.RemoveImage(ctx, repo, tag)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-
 			err = dstRegistry.Push(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
 			}
 
+		}
+
+		for tagIndex, tag := range tagsToSync {
+			err = srcRegistry.RemoveImage(ctx, repo, tag)
+			if err != nil {
+				return microerror.Mask(err)
+			}
 			err = dstRegistry.RemoveImage(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)

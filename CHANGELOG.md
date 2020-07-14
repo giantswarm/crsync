@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Synchronize all tags instead of just releases.
 - Fix tags listing in azure container registry.
 - Fix tags listing in dockerhub container registry.
+- Remove images after all tags synced, not after every tag.
 
 ## [0.3.0] - 2020-07-09
 
