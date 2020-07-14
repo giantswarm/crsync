@@ -165,6 +165,10 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 
 		for _, tag := range tagsToSync {
+			if repo == "crsync" {
+				continue
+			}
+
 			err = srcRegistry.RemoveImage(ctx, repo, tag)
 			if err != nil {
 				return microerror.Mask(err)
