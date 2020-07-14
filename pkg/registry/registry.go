@@ -144,7 +144,6 @@ func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
 	return nil
 }
 
-
 func GetLink(linkHeader string) string {
 	start := "<"
 	end := ">"
