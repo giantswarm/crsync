@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move sychronization logic into `sync` sub-command.
 - Synchronize all tags instead of just releases.
 - Fix tags listing in azure container registry.
+- Fix tags listing in dockerhub container registry.
 
 ## [0.3.0] - 2020-07-09
 
