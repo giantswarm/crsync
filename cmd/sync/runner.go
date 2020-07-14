@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -126,18 +125,12 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	//for {
-	//	err := r.sync(ctx, srcRegistry, dstRegistry)
-	//	if err != nil {
-	//		wait := 5 * time.Second
-	//		r.logger.LogCtx(ctx, "level", "error", "message", fmt.Sprintf("registry synchronization failed, waiting for %s seconds before next run", wait), "stack", microerror.JSON(err))
-	//		time.Sleep(wait)
-	//	}
-	//}
 	err = r.sync(ctx, srcRegistry, dstRegistry)
 	if err != nil {
 		return microerror.Mask(err)
 	}
+
+	return nil
 }
 
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
@@ -148,17 +141,6 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 		return microerror.Mask(err)
 	}
 	defer func(ctx context.Context) { _ = dstRegistry.Logout(ctx) }(ctx)
-
-	// Job channel has buffer equal to push/pull burst to not starve
-	// processing.
-	jobCh := make(chan retagJob, pullPushBurst)
-	defer close(jobCh)
-
-	processingErrCh := make(chan error)
-	go func(ctx context.Context) {
-		processingErrCh <- r.processRetagJobs(ctx, jobCh)
-	}(ctx)
-	defer close(processingErrCh)
 
 	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
@@ -193,54 +175,10 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 				Tag:  tag,
 			}
 
-			select {
-			case <-ctx.Done():
-				return microerror.Mask(ctx.Err())
-			case err := <-processingErrCh:
+			err := r.processRetagJob(ctx, job)
+			if err != nil {
 				return microerror.Mask(err)
-			case jobCh <- job:
-				// Job added.
 			}
-		}
-	}
-
-	// Wait for job processing to finish.
-	err = <-processingErrCh
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	return nil
-}
-
-func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) error {
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return microerror.Mask(ctx.Err())
-		case job, ok := <-jobCh:
-			if !ok {
-				return nil
-			}
-
-			wg.Add(1)
-
-			go func(ctx context.Context, job retagJob) {
-				defer wg.Done()
-
-				fmt.Printf("Job %#q started\n", job.ID)
-
-				err := r.processRetagJob(ctx, job)
-				if err != nil {
-					fmt.Printf("Job %#q failed with error: %s\n", job.ID, microerror.JSON(err))
-					return
-				}
-
-				fmt.Printf("Job %#q finished\n", job.ID)
-			}(ctx, job)
 		}
 	}
 
