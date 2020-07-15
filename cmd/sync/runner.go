@@ -49,6 +49,9 @@ func (r *runner) Run(cmd *cobra.Command, args []string) error {
 func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) error {
 	var err error
 
+	fmt.Printf("Source registry       = %#q\n", sourceRegistryName)
+	fmt.Printf("Destination registry  = %#q\n", r.flag.DstRegistryName)
+
 	var srcRegistryClient registry.RegistryClient
 	{
 		c := quay.Config{
@@ -170,6 +173,10 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 		fmt.Printf("Repository [%d/%d] = %#q: There are %d tags to sync.\n", repoIndex+1, len(reposToSync), repo, len(tagsToSync))
 
+		if len(tagsToSync) == 0 {
+			continue
+		}
+
 		for tagIndex, tag := range tagsToSync {
 			job := retagJob{
 				Src: srcRegistry,
@@ -180,15 +187,15 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 				Tag:  tag,
 			}
 
-			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging from %#q to %#q...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag, sourceRegistryName, r.flag.DstRegistryName)
+			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
 
 			err := r.processRetagJob(ctx, job)
 			if err != nil {
 				return microerror.Mask(err)
 			}
-
-			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagged.\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
 		}
+
+		fmt.Printf("Repository [%d/%d] = %#q: All tags synced.\n", repoIndex+1, len(reposToSync), repo)
 	}
 
 	return nil

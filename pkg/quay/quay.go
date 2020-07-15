@@ -50,8 +50,6 @@ func (q *Quay) Authorize(user, password string) error {
 }
 
 func (q *Quay) ListRepositories() ([]string, error) {
-	fmt.Printf("Reading list of quay repositories in %#q namespace...\n", q.namespace)
-
 	var reposToSync []string
 
 	req, err := http.NewRequest("GET", repositoryEndpoint, nil)
