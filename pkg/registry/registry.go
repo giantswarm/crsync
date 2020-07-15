@@ -152,6 +152,24 @@ func GetLink(linkHeader string) string {
 	return linkHeader[s:e]
 }
 
+func imageIsRunning(repo, tag string) (bool, error) {
+	cmd := exec.Command(dockerBinaryName, "ps")
+
+	var exitCode int = -1
+	var exitErr *exec.ExitError
+
+	output, err := cmd.CombinedOutput()
+	if errors.As(err, &exitErr) {
+		exitCode = exitErr.ExitCode()
+	}
+	if err != nil {
+		return false, microerror.Maskf(executionFailedError, "command execution failed with exit code = %d error = %#q and output:\n\n%s", exitCode, err, output)
+	}
+
+	imageName := fmt.Sprintf("%s:%s", repo, tag)
+	return strings.Contains(string(output), imageName), nil
+}
+
 func executeCmd(binary string, args []string) error {
 	cmd := exec.Command(
 		binary,
