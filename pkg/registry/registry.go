@@ -113,9 +113,17 @@ func (r *Registry) Push(ctx context.Context, repo, tag string) error {
 func (r *Registry) RemoveImage(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
+	isRunning, err := imageIsRunning(repo, tag)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	if isRunning {
+		return nil
+	}
+
 	args := []string{"rmi", image}
 
-	err := executeCmd(dockerBinaryName, args)
+	err = executeCmd(dockerBinaryName, args)
 	if err != nil {
 		return microerror.Mask(err)
 	}
