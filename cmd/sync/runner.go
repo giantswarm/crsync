@@ -141,17 +141,17 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
 	var err error
 
-	fmt.Printf("Logging in destination container registry...\n")
+	fmt.Println()
+	fmt.Printf("Logging in destination registry...\n")
 	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 	defer func(ctx context.Context) {
 		fmt.Println()
-		fmt.Printf("Logging out of destination container registry...\n")
+		fmt.Printf("Logging out of destination registry...\n")
 		_ = dstRegistry.Logout(ctx)
 	}(ctx)
-	fmt.Println()
 
 	// Job channel has buffer equal to push/pull burst to not starve
 	// processing.
@@ -163,12 +163,15 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	}(ctx)
 	defer close(processingErrCh)
 
+	fmt.Println()
+	fmt.Printf("Reading list of repositories to sync from source registry...\n")
 	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
+	fmt.Println()
 
 	for repoIndex, repo := range reposToSync {
 		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
