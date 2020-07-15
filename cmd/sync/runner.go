@@ -256,8 +256,6 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 			}(ctx, job)
 		}
 	}
-
-	return nil
 }
 
 func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
