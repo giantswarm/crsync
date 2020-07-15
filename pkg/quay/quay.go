@@ -50,8 +50,6 @@ func (q *Quay) Authorize(user, password string) error {
 }
 
 func (q *Quay) ListRepositories() ([]string, error) {
-	fmt.Printf("Reading list of quay repositories in %#q namespace...\n", q.namespace)
-
 	var reposToSync []string
 
 	req, err := http.NewRequest("GET", repositoryEndpoint, nil)
@@ -95,8 +93,6 @@ func (q *Quay) ListRepositories() ([]string, error) {
 }
 
 func (q *Quay) ListTags(repository string) ([]string, error) {
-	fmt.Printf("\nReading list of tags from source registry for %#q repository...\n", repository)
-
 	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", registryEndpoint, repository)
 
 	type tagsJSON struct {

@@ -47,6 +47,9 @@ func (r *runner) Run(cmd *cobra.Command, args []string) error {
 func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) error {
 	var err error
 
+	fmt.Printf("Source registry       = %#q\n", sourceRegistryName)
+	fmt.Printf("Destination registry  = %#q\n", r.flag.DstRegistryName)
+
 	var srcRegistryClient registry.RegistryClient
 	{
 		c := quay.Config{
@@ -111,11 +114,16 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
+	fmt.Printf("Logging in destination container registry...\n")
 	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	defer func(ctx context.Context) { _ = dstRegistry.Logout(ctx) }(ctx)
+	defer func(ctx context.Context) {
+		fmt.Println()
+		fmt.Printf("Logging out of destination container registry...\n")
+		_ = dstRegistry.Logout(ctx)
+	}(ctx)
 
 	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
@@ -125,11 +133,14 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 
 	for repoIndex, repo := range reposToSync {
+		fmt.Println()
+		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
 		srcTags, err := srcRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
+		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from destination registry...\n", repoIndex+1, len(reposToSync), repo)
 		dstTags, err := dstRegistry.ListTags(ctx, repo)
 		if err != nil {
 			return microerror.Mask(err)
@@ -137,15 +148,14 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 		tagsToSync := sliceDiff(srcTags, dstTags)
 
+		fmt.Printf("Repository [%d/%d] = %#q: There are %d tags to sync.\n", repoIndex+1, len(reposToSync), repo, len(tagsToSync))
+
 		if len(tagsToSync) == 0 {
 			continue
 		}
 
-		fmt.Printf("There are %d tags to sync in %s repository.\n", len(tagsToSync), repo)
-
 		for tagIndex, tag := range tagsToSync {
-
-			fmt.Printf("\nRepository [%d/%d], tag [%d/%d]: image `%s/%s:%s`.\n\n", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag)
+			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
 
 			err := srcRegistry.Pull(ctx, repo, tag)
 			if err != nil {
@@ -172,6 +182,8 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				return microerror.Mask(err)
 			}
 		}
+
+		fmt.Printf("Repository [%d/%d] = %#q: All tags synced.\n", repoIndex+1, len(reposToSync), repo)
 	}
 
 	return nil
