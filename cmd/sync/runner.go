@@ -182,7 +182,7 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 				Src: srcRegistry,
 				Dst: dstRegistry,
 
-				ID:   fmt.Sprintf("repository [%d/%d] tag [%d/%d] image = `%s/%s:%s`", repoIndex+1, len(reposToSync), tagIndex+1, len(tagsToSync), r.flag.DstRegistryName, repo, tag),
+				ID:   fmt.Sprintf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag),
 				Repo: repo,
 				Tag:  tag,
 			}
