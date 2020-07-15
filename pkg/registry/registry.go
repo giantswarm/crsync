@@ -8,6 +8,9 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+
 	"github.com/giantswarm/microerror"
 )
 
@@ -25,6 +28,7 @@ type Registry struct {
 	name string
 
 	registryClient RegistryClient
+	dockerClient   *client.Client
 }
 
 type Repository struct {
@@ -33,9 +37,15 @@ type Repository struct {
 }
 
 func New(c Config) (*Registry, error) {
+	dockerClient, err := client.NewEnvClient()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
 	return &Registry{
 		name:           c.Name,
 		registryClient: c.RegistryClient,
+		dockerClient:   dockerClient,
 	}, nil
 }
 
@@ -113,14 +123,39 @@ func (r *Registry) Push(ctx context.Context, repo, tag string) error {
 func (r *Registry) RemoveImage(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 
+	runningImages, err := r.listRunningImages()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	if _, ok := runningImages[image]; ok {
+		// Host is currently running this particular image; Trying to remove it
+		// would cause errors.
+		return nil
+	}
+
 	args := []string{"rmi", image}
 
-	err := executeCmd(dockerBinaryName, args)
+	err = executeCmd(dockerBinaryName, args)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	return nil
+}
+
+func (r *Registry) listRunningImages() (map[string]bool, error) {
+	images := map[string]bool{}
+
+	containers, err := r.dockerClient.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		return images, microerror.Mask(err)
+	}
+
+	for _, c := range containers {
+		images[c.Image] = true
+	}
+
+	return images, nil
 }
 
 func RetagImage(repo, tag, srcRegistry, dstRegistry string) error {
