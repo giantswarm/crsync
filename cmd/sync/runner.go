@@ -130,10 +130,19 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
+	if !r.flag.Loop {
+		err := r.sync(ctx, srcRegistry, dstRegistry)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
+	}
+
 	for {
 		start := time.Now()
 
-		err = r.sync(ctx, srcRegistry, dstRegistry)
+		err := r.sync(ctx, srcRegistry, dstRegistry)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
 		} else {
