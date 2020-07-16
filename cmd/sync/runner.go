@@ -12,6 +12,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/giantswarm/crsync/internal/key"
@@ -24,6 +25,7 @@ import (
 const (
 	sourceRegistryName = "quay.io"
 
+	listBurst     = 1
 	pullPushBurst = 30
 )
 
@@ -130,12 +132,17 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	err = r.sync(ctx, srcRegistry, dstRegistry)
-	if err != nil {
-		return microerror.Mask(err)
-	}
+	for {
+		start := time.Now()
 
-	return nil
+		err = r.sync(ctx, srcRegistry, dstRegistry)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
+		} else {
+			fmt.Printf("\nTook %s\n", time.Since(start))
+		}
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
@@ -153,15 +160,22 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 		_ = dstRegistry.Logout(ctx)
 	}(ctx)
 
-	// Job channel has buffer equal to push/pull burst to not starve
+	// getTagsJobCh channel has buffer 4 times bigger listing tags/repos burst to not starve
 	// processing.
-	jobCh := make(chan retagJob, pullPushBurst)
+	getTagsJobCh := make(chan getTagsJob, listBurst*4)
 
-	processingErrCh := make(chan error)
+	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
+	// processing.
+	retagJobCh := make(chan retagJob, pullPushBurst*2)
+
+	processGetTagsJobErrCh := make(chan error)
+	processRetagJobsErrCh := make(chan error)
 	go func(ctx context.Context) {
-		processingErrCh <- r.processRetagJobs(ctx, jobCh)
+		processGetTagsJobErrCh <- r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
+		processRetagJobsErrCh <- r.processRetagJobs(ctx, retagJobCh)
 	}(ctx)
-	defer close(processingErrCh)
+	defer close(processGetTagsJobErrCh)
+	defer close(processRetagJobsErrCh)
 
 	fmt.Println()
 	fmt.Printf("Reading list of repositories to sync from source registry...\n")
@@ -174,56 +188,95 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	fmt.Println()
 
 	for repoIndex, repo := range reposToSync {
-		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
-		srcTags, err := srcRegistry.ListTags(ctx, repo)
-		if err != nil {
+		job := getTagsJob{
+			Src: srcRegistry,
+			Dst: dstRegistry,
+
+			ID:   fmt.Sprintf("Repository [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo),
+			Repo: repo,
+		}
+
+		select {
+		case <-ctx.Done():
+			return microerror.Mask(ctx.Err())
+		case err := <-processGetTagsJobErrCh:
 			return microerror.Mask(err)
-		}
-
-		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from destination registry...\n", repoIndex+1, len(reposToSync), repo)
-		dstTags, err := dstRegistry.ListTags(ctx, repo)
-		if err != nil {
+		case err := <-processRetagJobsErrCh:
 			return microerror.Mask(err)
-		}
-
-		tagsToSync := sliceDiff(srcTags, dstTags)
-
-		fmt.Printf("Repository [%d/%d] = %#q: There are %d tags to sync.\n", repoIndex+1, len(reposToSync), repo, len(tagsToSync))
-
-		if len(tagsToSync) == 0 {
-			continue
-		}
-
-		for tagIndex, tag := range tagsToSync {
-			job := retagJob{
-				Src: srcRegistry,
-				Dst: dstRegistry,
-
-				ID:   fmt.Sprintf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag),
-				Repo: repo,
-				Tag:  tag,
-			}
-
-			select {
-			case <-ctx.Done():
-				return microerror.Mask(ctx.Err())
-			case err := <-processingErrCh:
-				return microerror.Mask(err)
-			case jobCh <- job:
-				// Job added.
-			}
+		case getTagsJobCh <- job:
+			// Job added.
 		}
 	}
 
-	close(jobCh)
-
 	// Wait for job processing to finish.
-	err = <-processingErrCh
-	if err != nil {
-		return microerror.Mask(err)
+	{
+		close(getTagsJobCh)
+		err = <-processGetTagsJobErrCh
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		close(retagJobCh)
+		err = <-processRetagJobsErrCh
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	return nil
+}
+
+func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob, resultCh chan retagJob) error {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return microerror.Mask(ctx.Err())
+		case job, ok := <-jobCh:
+			if !ok {
+				return nil
+			}
+
+			wg.Add(1)
+
+			go func(ctx context.Context, job getTagsJob) {
+				defer wg.Done()
+				start := time.Now()
+
+				fmt.Printf("%s: Getting list of tags to sync...\n", job.ID)
+
+				tags, err := r.processGetTagsJob(ctx, job)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.JSON(err))
+					return
+				}
+
+				fmt.Printf("%s: Scheduling %d tags to sync...\n", job.ID, len(tags))
+
+				for i, t := range tags {
+					j := retagJob{
+						Src: job.Src,
+						Dst: job.Dst,
+
+						ID:   fmt.Sprintf("%s: Tag [%d/%d] = %#q", job.ID, i+1, len(tags), t),
+						Repo: job.Repo,
+						Tag:  t,
+					}
+
+					select {
+					case <-ctx.Done():
+						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.JSON(err))
+					case resultCh <- j:
+						// ok
+					}
+				}
+
+				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
+			}(ctx, job)
+		}
+	}
 }
 
 func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) error {
@@ -243,19 +296,44 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 
 			go func(ctx context.Context, job retagJob) {
 				defer wg.Done()
+				start := time.Now()
 
 				fmt.Printf("%s: Retagging...\n", job.ID)
 
 				err := r.processRetagJob(ctx, job)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed: %s\n", job.ID, microerror.JSON(err))
+					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.JSON(err))
 					return
 				}
 
-				fmt.Printf("%s: Retagged\n", job.ID)
+				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
 			}(ctx, job)
 		}
 	}
+}
+
+func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]string, error) {
+	var srcTags, dstTags []string
+
+	eg := new(errgroup.Group)
+	eg.Go(func() error {
+		var err error
+		srcTags, err = job.Src.ListTags(ctx, job.Repo)
+		return microerror.Mask(err)
+	})
+	eg.Go(func() error {
+		var err error
+		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
+		return microerror.Mask(err)
+	})
+	err := eg.Wait()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	tags := sliceDiff(srcTags, dstTags)
+
+	return tags, nil
 }
 
 func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
@@ -266,6 +344,8 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 
 	err = registry.RetagImage(job.Repo, job.Tag, sourceRegistryName, r.flag.DstRegistryName)
 	if err != nil {
+		// Try to remove the image by best effort in case of error.
+		_ = job.Src.RemoveImage(ctx, job.Repo, job.Tag)
 		return microerror.Mask(err)
 	}
 
@@ -276,6 +356,8 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 
 	err = job.Dst.Push(ctx, job.Repo, job.Tag)
 	if err != nil {
+		// Try to remove the image by best effort in case of error.
+		_ = job.Dst.RemoveImage(ctx, job.Repo, job.Tag)
 		return microerror.Mask(err)
 	}
 
@@ -290,8 +372,8 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, error) {
 	c := registry.DecoratedRegistryConfig{
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
-			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), 1),
-			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), 1),
+			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), listBurst),
+			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), listBurst),
 			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
 			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
 		},
