@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
+	"golang.org/x/time/rate"
 
 	"github.com/giantswarm/crsync/internal/key"
 	"github.com/giantswarm/crsync/pkg/azurecr"
@@ -74,6 +76,11 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		if err != nil {
 			return microerror.Mask(err)
 		}
+
+		srcRegistry, err = newDecoratedRegistry(srcRegistry)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	var dstRegistryClient registry.RegistryClient
@@ -112,7 +119,23 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		if err != nil {
 			return microerror.Mask(err)
 		}
+
+		dstRegistry, err = newDecoratedRegistry(dstRegistry)
+		if err != nil {
+			return microerror.Mask(err)
+		}
 	}
+
+	err = r.sync(ctx, srcRegistry, dstRegistry)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
+	var err error
 
 	fmt.Printf("Logging in destination container registry...\n")
 	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
@@ -155,29 +178,18 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 
 		for tagIndex, tag := range tagsToSync {
+			job := retagJob{
+				Src: srcRegistry,
+				Dst: dstRegistry,
+
+				ID:   fmt.Sprintf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag),
+				Repo: repo,
+				Tag:  tag,
+			}
+
 			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
 
-			err := srcRegistry.Pull(ctx, repo, tag)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-
-			err = registry.RetagImage(repo, tag, sourceRegistryName, r.flag.DstRegistryName)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-
-			err = srcRegistry.RemoveImage(ctx, repo, tag)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-
-			err = dstRegistry.Push(ctx, repo, tag)
-			if err != nil {
-				return microerror.Mask(err)
-			}
-
-			err = dstRegistry.RemoveImage(ctx, repo, tag)
+			err := r.processRetagJob(ctx, job)
 			if err != nil {
 				return microerror.Mask(err)
 			}
@@ -187,6 +199,54 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	}
 
 	return nil
+}
+
+func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
+	err := job.Src.Pull(ctx, job.Repo, job.Tag)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = registry.RetagImage(job.Repo, job.Tag, sourceRegistryName, r.flag.DstRegistryName)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = job.Src.RemoveImage(ctx, job.Repo, job.Tag)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = job.Dst.Push(ctx, job.Repo, job.Tag)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	err = job.Dst.RemoveImage(ctx, job.Repo, job.Tag)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	return nil
+}
+
+func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, error) {
+	c := registry.DecoratedRegistryConfig{
+		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
+			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), 1),
+			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), 1),
+			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
+			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
+		},
+		Underlying: reg,
+	}
+
+	r, err := registry.NewDecoratedRegistry(c)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return r, nil
 }
 
 func sliceDiff(s1, s2 []string) []string {
