@@ -339,8 +339,6 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 
 	err = registry.RetagImage(job.Repo, job.Tag, sourceRegistryName, r.flag.DstRegistryName)
 	if err != nil {
-		// Try to remove the image by best effort in case of error.
-		_ = job.Src.RemoveImage(ctx, job.Repo, job.Tag)
 		return microerror.Mask(err)
 	}
 
@@ -351,8 +349,6 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 
 	err = job.Dst.Push(ctx, job.Repo, job.Tag)
 	if err != nil {
-		// Try to remove the image by best effort in case of error.
-		_ = job.Dst.RemoveImage(ctx, job.Repo, job.Tag)
 		return microerror.Mask(err)
 	}
 
