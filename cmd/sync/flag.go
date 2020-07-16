@@ -17,6 +17,7 @@ const (
 	flagDstRegistryUser     = "dst-user"
 	flagDstRegistryPassword = "dst-password"
 	flagLastModified        = "last-modified"
+	flagLoop                = "loop"
 )
 
 type flag struct {
@@ -24,6 +25,7 @@ type flag struct {
 	DstRegistryUser     string
 	DstRegistryPassword string
 	LastModified        time.Duration
+	Loop                bool
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
@@ -31,6 +33,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&f.DstRegistryUser, flagDstRegistryUser, "", `Destination container registry user.`)
 	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, "", fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
 	cmd.Flags().DurationVar(&f.LastModified, flagLastModified, time.Hour, `Duration in time when source repository was last modified.`)
+	cmd.Flags().BoolVar(&f.Loop, flagLoop, false, "Whether to run the job continuously.")
 }
 
 func (f *flag) Validate() error {

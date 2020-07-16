@@ -131,12 +131,27 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		}
 	}
 
-	err = r.sync(ctx, srcRegistry, dstRegistry)
-	if err != nil {
-		return microerror.Mask(err)
+	if !r.flag.Loop {
+		err := r.sync(ctx, srcRegistry, dstRegistry)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		return nil
 	}
 
-	return nil
+	for {
+		start := time.Now()
+
+		err := r.sync(ctx, srcRegistry, dstRegistry)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
+		} else {
+			fmt.Printf("\nTook %s\n", time.Since(start))
+		}
+
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
