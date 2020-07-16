@@ -23,6 +23,10 @@ var (
 	)
 )
 
+func init() {
+	prometheus.MustRegister(tagsSyncedTotal)
+}
+
 func updateTagsSyncedTotal(srcRegistry, dstRegistry, repository string) {
 	tagsSyncedTotal.WithLabelValues(
 		srcRegistry, dstRegistry, repository,
