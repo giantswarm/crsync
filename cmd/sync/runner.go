@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -21,6 +23,8 @@ import (
 
 const (
 	sourceRegistryName = "quay.io"
+
+	pullPushBurst = 30
 )
 
 type runner struct {
@@ -137,26 +141,39 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
 	var err error
 
-	fmt.Printf("Logging in destination container registry...\n")
+	fmt.Println()
+	fmt.Printf("Logging in destination registry...\n")
 	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 	defer func(ctx context.Context) {
 		fmt.Println()
-		fmt.Printf("Logging out of destination container registry...\n")
+		fmt.Printf("Logging out of destination registry...\n")
 		_ = dstRegistry.Logout(ctx)
 	}(ctx)
 
+	// Job channel has buffer equal to push/pull burst to not starve
+	// processing.
+	jobCh := make(chan retagJob, pullPushBurst)
+
+	processingErrCh := make(chan error)
+	go func(ctx context.Context) {
+		processingErrCh <- r.processRetagJobs(ctx, jobCh)
+	}(ctx)
+	defer close(processingErrCh)
+
+	fmt.Println()
+	fmt.Printf("Reading list of repositories to sync from source registry...\n")
 	reposToSync, err := srcRegistry.ListRepositories(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
+	fmt.Println()
 
 	for repoIndex, repo := range reposToSync {
-		fmt.Println()
 		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
 		srcTags, err := srcRegistry.ListTags(ctx, repo)
 		if err != nil {
@@ -187,18 +204,58 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 				Tag:  tag,
 			}
 
-			fmt.Printf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q: Retagging...\n", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag)
-
-			err := r.processRetagJob(ctx, job)
-			if err != nil {
+			select {
+			case <-ctx.Done():
+				return microerror.Mask(ctx.Err())
+			case err := <-processingErrCh:
 				return microerror.Mask(err)
+			case jobCh <- job:
+				// Job added.
 			}
 		}
+	}
 
-		fmt.Printf("Repository [%d/%d] = %#q: All tags synced.\n", repoIndex+1, len(reposToSync), repo)
+	close(jobCh)
+
+	// Wait for job processing to finish.
+	err = <-processingErrCh
+	if err != nil {
+		return microerror.Mask(err)
 	}
 
 	return nil
+}
+
+func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) error {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return microerror.Mask(ctx.Err())
+		case job, ok := <-jobCh:
+			if !ok {
+				return nil
+			}
+
+			wg.Add(1)
+
+			go func(ctx context.Context, job retagJob) {
+				defer wg.Done()
+
+				fmt.Printf("%s: Retagging...\n", job.ID)
+
+				err := r.processRetagJob(ctx, job)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s: Failed: %s\n", job.ID, microerror.JSON(err))
+					return
+				}
+
+				fmt.Printf("%s: Retagged\n", job.ID)
+			}(ctx, job)
+		}
+	}
 }
 
 func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
@@ -235,8 +292,8 @@ func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, 
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
 			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), 1),
 			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), 1),
-			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
-			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), 30),
+			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
+			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
 		},
 		Underlying: reg,
 	}
