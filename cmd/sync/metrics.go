@@ -8,7 +8,7 @@ const (
 )
 
 var (
-	tagsSyncedTotal = prometheus.NewGauge(
+	tagsSyncedTotal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
