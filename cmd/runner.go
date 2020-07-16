@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
+
+	"github.com/giantswarm/crsync/pkg/project"
 )
 
 type runner struct {
@@ -14,6 +17,15 @@ type runner struct {
 	logger micrologger.Logger
 	stdout io.Writer
 	stderr io.Writer
+}
+
+func (r *runner) PersistentPreRun(cmd *cobra.Command, args []string) error {
+	fmt.Printf("Version = %#q\n", project.Version())
+	fmt.Printf("Git SHA = %#q\n", project.GitSHA())
+	fmt.Printf("Command = %#q\n", cmd.Name())
+	fmt.Println()
+
+	return nil
 }
 
 func (r *runner) Run(cmd *cobra.Command, args []string) error {
