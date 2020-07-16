@@ -59,12 +59,11 @@ func New(config Config) (*cobra.Command, error) {
 	}
 
 	c := &cobra.Command{
-		Use:               name,
-		Short:             description,
-		Long:              description,
-		PersistentPreRunE: r.PersistentPreRun,
-		RunE:              r.Run,
-		SilenceUsage:      true,
+		Use:          name,
+		Short:        description,
+		Long:         description,
+		RunE:         r.Run,
+		SilenceUsage: true,
 	}
 
 	f.Init(c)
