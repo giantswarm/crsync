@@ -12,6 +12,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/giantswarm/crsync/internal/key"
@@ -174,24 +175,17 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	fmt.Println()
 
 	for repoIndex, repo := range reposToSync {
-		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from source registry...\n", repoIndex+1, len(reposToSync), repo)
-		srcTags, err := srcRegistry.ListTags(ctx, repo)
-		if err != nil {
-			return microerror.Mask(err)
+		job := getTagsJob{
+			Src: srcRegistry,
+			Dst: dstRegistry,
+
+			ID:   fmt.Sprintf("Repository [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo),
+			Repo: repo,
 		}
 
-		fmt.Printf("Repository [%d/%d] = %#q: Reading list of tags from destination registry...\n", repoIndex+1, len(reposToSync), repo)
-		dstTags, err := dstRegistry.ListTags(ctx, repo)
+		tagsToSync, err := r.processGetTagsJob(ctx, job)
 		if err != nil {
 			return microerror.Mask(err)
-		}
-
-		tagsToSync := sliceDiff(srcTags, dstTags)
-
-		fmt.Printf("Repository [%d/%d] = %#q: There are %d tags to sync.\n", repoIndex+1, len(reposToSync), repo, len(tagsToSync))
-
-		if len(tagsToSync) == 0 {
-			continue
 		}
 
 		for tagIndex, tag := range tagsToSync {
@@ -256,6 +250,30 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 			}(ctx, job)
 		}
 	}
+}
+
+func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]string, error) {
+	var srcTags, dstTags []string
+
+	eg := new(errgroup.Group)
+	eg.Go(func() error {
+		var err error
+		srcTags, err = job.Src.ListTags(ctx, job.Repo)
+		return microerror.Mask(err)
+	})
+	eg.Go(func() error {
+		var err error
+		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
+		return microerror.Mask(err)
+	})
+	err := eg.Wait()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	tags := sliceDiff(srcTags, dstTags)
+
+	return tags, nil
 }
 
 func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
