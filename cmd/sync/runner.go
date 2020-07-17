@@ -380,6 +380,7 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 		return microerror.Mask(err)
 	}
 
+	updateTagsSyncedTotal(sourceRegistryName, r.flag.DstRegistryName, job.Repo)
 	return nil
 }
 
