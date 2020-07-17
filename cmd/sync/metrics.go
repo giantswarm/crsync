@@ -8,8 +8,8 @@ const (
 )
 
 var (
-	tagsSyncedTotal = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
+	tagsSyncedTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
 			Name:      "tags_synced_total",
