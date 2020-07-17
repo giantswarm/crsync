@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
@@ -141,6 +144,22 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		return nil
 	}
 
+	if r.flag.MetricsPort != 0 {
+		go func() {
+			fmt.Printf("Serving metrics at :%d", r.flag.MetricsPort)
+			http.Handle("/metrics", promhttp.HandlerFor(
+				prometheus.DefaultGatherer,
+				promhttp.HandlerOpts{},
+			))
+			err := http.ListenAndServe(fmt.Sprintf(":%d", r.flag.MetricsPort), nil)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed serving metrics: %v", microerror.Mask(err))
+			}
+		}()
+	} else {
+		fmt.Println("Metrics disabled")
+	}
+
 	for {
 		start := time.Now()
 
@@ -214,8 +233,10 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 		case <-ctx.Done():
 			return microerror.Mask(ctx.Err())
 		case err := <-processGetTagsJobErrCh:
+			errorsTotal.Inc()
 			return microerror.Mask(err)
 		case err := <-processRetagJobsErrCh:
+			errorsTotal.Inc()
 			return microerror.Mask(err)
 		case getTagsJobCh <- job:
 			// Job added.
@@ -333,11 +354,13 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 	eg.Go(func() error {
 		var err error
 		srcTags, err = job.Src.ListTags(ctx, job.Repo)
+		tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
 		return microerror.Mask(err)
 	})
 	eg.Go(func() error {
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
+		tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
 		return microerror.Mask(err)
 	})
 	err := eg.Wait()

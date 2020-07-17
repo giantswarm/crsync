@@ -84,6 +84,10 @@ func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, e
 	return r.registryClient.ListTags(repository)
 }
 
+func (r Registry) Name() string {
+	return r.name
+}
+
 func (r *Registry) Pull(ctx context.Context, repo, tag string) error {
 	image := fmt.Sprintf("%s/%s:%s", r.name, repo, tag)
 

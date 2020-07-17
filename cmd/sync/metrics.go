@@ -8,27 +8,30 @@ const (
 )
 
 var (
-	tagsSyncedTotal = prometheus.NewCounterVec(
+	errorsTotal = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
-			Name:      "tags_synced_total",
-			Help:      "Number of synchronized tags per repository",
+			Name:      "errors_total",
+			Help:      "Number of errors occurred while synchronizing repositories",
+		},
+	)
+
+	tagsTotal = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: prometheusNamespace,
+			Subsystem: prometheusSubsystem,
+			Name:      "tags_total",
+			Help:      "Number of tags in repository",
 		},
 		[]string{
-			"source_registry",
-			"destination_registry",
+			"registry",
 			"repository",
 		},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(tagsSyncedTotal)
-}
-
-func updateTagsSyncedTotal(srcRegistry, dstRegistry, repository string) {
-	tagsSyncedTotal.WithLabelValues(
-		srcRegistry, dstRegistry, repository,
-	).Inc()
+	prometheus.MustRegister(errorsTotal)
+	prometheus.MustRegister(tagsTotal)
 }
