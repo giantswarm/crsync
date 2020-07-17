@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix tags listing in azure container registry.
 - Fix tags listing in dockerhub container registry.
+- Make helm resource names unique per release.
 
 ## [0.3.0] - 2020-07-09
 
