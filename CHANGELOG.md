@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Make helm resource names unique per release.
+- Reduce number of concurrent push/pull operations to avoid docker client
+  kills.
 
 ## [0.4.0] - 2020-07-17
 
