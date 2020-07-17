@@ -20,6 +20,16 @@ spec:
       labels:
         {{- include "labels.common" . | nindent 8 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ include "name" . | quote }}
+            topologyKey: "kubernetes.io/hostname"
       containers:
       - args:
         - --dst-name={{ .Values.destinationRegistry.name }}
