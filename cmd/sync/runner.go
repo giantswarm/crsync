@@ -195,7 +195,9 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	}
 
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
-	fmt.Println()
+	if len(reposToSync) > 0 {
+		fmt.Println()
+	}
 
 	for repoIndex, repo := range reposToSync {
 		job := getTagsJob{
