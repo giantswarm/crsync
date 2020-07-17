@@ -32,6 +32,7 @@ spec:
             topologyKey: "kubernetes.io/hostname"
       containers:
       - args:
+        - sync
         - --dst-name={{ .Values.destinationRegistry.name }}
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
         - --last-modified={{ .Values.lastModified }}
