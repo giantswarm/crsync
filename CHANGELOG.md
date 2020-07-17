@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix the issue where too many tags lead to a deadlock by starting both
+  processors (tag listing & retagging) in parallel.
+
 ## [0.4.0] - 2020-07-17
 
 ### Added
