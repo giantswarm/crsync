@@ -15,5 +15,3 @@ spec:
       targetPort: {{ .Values.metricsPort }}
   selector:
     {{- include "labels.selector" . | nindent 4 }}
-
-
