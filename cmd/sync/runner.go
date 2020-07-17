@@ -25,6 +25,7 @@ import (
 const (
 	sourceRegistryName = "quay.io"
 
+	listBurst     = 1
 	pullPushBurst = 30
 )
 
@@ -169,15 +170,22 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 		_ = dstRegistry.Logout(ctx)
 	}(ctx)
 
-	// Job channel has buffer equal to push/pull burst to not starve
+	// getTagsJobCh channel has buffer 4 times bigger listing tags/repos burst to not starve
 	// processing.
-	jobCh := make(chan retagJob, pullPushBurst)
+	getTagsJobCh := make(chan getTagsJob, listBurst*4)
 
-	processingErrCh := make(chan error)
+	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
+	// processing.
+	retagJobCh := make(chan retagJob, pullPushBurst*2)
+
+	processGetTagsJobErrCh := make(chan error)
+	processRetagJobsErrCh := make(chan error)
 	go func(ctx context.Context) {
-		processingErrCh <- r.processRetagJobs(ctx, jobCh)
+		processGetTagsJobErrCh <- r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
+		processRetagJobsErrCh <- r.processRetagJobs(ctx, retagJobCh)
 	}(ctx)
-	defer close(processingErrCh)
+	defer close(processGetTagsJobErrCh)
+	defer close(processRetagJobsErrCh)
 
 	fmt.Println()
 	fmt.Printf("Reading list of repositories to sync from source registry...\n")
@@ -198,41 +206,87 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 			Repo: repo,
 		}
 
-		tagsToSync, err := r.processGetTagsJob(ctx, job)
+		select {
+		case <-ctx.Done():
+			return microerror.Mask(ctx.Err())
+		case err := <-processGetTagsJobErrCh:
+			return microerror.Mask(err)
+		case err := <-processRetagJobsErrCh:
+			return microerror.Mask(err)
+		case getTagsJobCh <- job:
+			// Job added.
+		}
+	}
+
+	// Wait for job processing to finish.
+	{
+		close(getTagsJobCh)
+		err = <-processGetTagsJobErrCh
 		if err != nil {
 			return microerror.Mask(err)
 		}
 
-		for tagIndex, tag := range tagsToSync {
-			job := retagJob{
-				Src: srcRegistry,
-				Dst: dstRegistry,
-
-				ID:   fmt.Sprintf("Repository [%d/%d] = %#q: Tag [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo, tagIndex+1, len(tagsToSync), tag),
-				Repo: repo,
-				Tag:  tag,
-			}
-
-			select {
-			case <-ctx.Done():
-				return microerror.Mask(ctx.Err())
-			case err := <-processingErrCh:
-				return microerror.Mask(err)
-			case jobCh <- job:
-				// Job added.
-			}
+		close(retagJobCh)
+		err = <-processRetagJobsErrCh
+		if err != nil {
+			return microerror.Mask(err)
 		}
 	}
 
-	close(jobCh)
-
-	// Wait for job processing to finish.
-	err = <-processingErrCh
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
 	return nil
+}
+
+func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob, resultCh chan retagJob) error {
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return microerror.Mask(ctx.Err())
+		case job, ok := <-jobCh:
+			if !ok {
+				return nil
+			}
+
+			wg.Add(1)
+
+			go func(ctx context.Context, job getTagsJob) {
+				defer wg.Done()
+				start := time.Now()
+
+				fmt.Printf("%s: Getting list of tags to sync...\n", job.ID)
+
+				tags, err := r.processGetTagsJob(ctx, job)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.JSON(err))
+					return
+				}
+
+				fmt.Printf("%s: Scheduling %d tags to sync...\n", job.ID, len(tags))
+
+				for i, t := range tags {
+					j := retagJob{
+						Src: job.Src,
+						Dst: job.Dst,
+
+						ID:   fmt.Sprintf("%s: Tag [%d/%d] = %#q", job.ID, i+1, len(tags), t),
+						Repo: job.Repo,
+						Tag:  t,
+					}
+
+					select {
+					case <-ctx.Done():
+						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.JSON(err))
+					case resultCh <- j:
+						// ok
+					}
+				}
+
+				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
+			}(ctx, job)
+		}
+	}
 }
 
 func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) error {
@@ -252,16 +306,17 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 
 			go func(ctx context.Context, job retagJob) {
 				defer wg.Done()
+				start := time.Now()
 
 				fmt.Printf("%s: Retagging...\n", job.ID)
 
 				err := r.processRetagJob(ctx, job)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed: %s\n", job.ID, microerror.JSON(err))
+					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.JSON(err))
 					return
 				}
 
-				fmt.Printf("%s: Retagged\n", job.ID)
+				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
 			}(ctx, job)
 		}
 	}
@@ -327,8 +382,8 @@ func (r *runner) processRetagJob(ctx context.Context, job retagJob) error {
 func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, error) {
 	c := registry.DecoratedRegistryConfig{
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
-			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), 1),
-			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), 1),
+			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), listBurst),
+			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), listBurst),
 			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
 			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
 		},

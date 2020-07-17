@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `--loop` flag to `sync` command allowing to run it continuously.
-- Add parallel pushing/pulling in `sync` command.
+- Run operations against docker registry in parallel in `sync` command.
 
 ### Changed
 
