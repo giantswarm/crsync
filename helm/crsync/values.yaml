@@ -1,15 +1,20 @@
-name: crsync
-
-lastModified: 2h
+lastModified: 1h
 
 destinationRegistry:
   name: docker.io
   credentials:
-    user:
+    user: ""
     # base64 encoded password
-    password:
+    password: ""
 
 image:
-  registry: quay.io
   name: giantswarm/crsync
   tag: "[[ .Version ]]"
+Installation:
+  V1:
+    Registry:
+      Domain: quay.io
+
+project:
+  branch: "[[ .Branch ]]"
+  commit: "[[ .SHA ]]"

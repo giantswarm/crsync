@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Run as a continuous service in a Deployment instead of a CronJob.
 - Move synchronization logic into `sync` sub-command.
 - Synchronize all tags instead of just releases.
 

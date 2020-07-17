@@ -4,12 +4,11 @@ metadata:
   namespace: {{ include "resource.default.namespace"  . }}
   name: {{ include "resource.default.name"  . }}
   labels:
-    app: {{ include "resource.default.name"  . }}
-    giantswarm.io/service-type: "managed"
+    {{- include "labels.common" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ include "resource.default.name"  . }}
+      {{- include "labels.selector" . | nindent 6 }}
   egress:
   - {}
   policyTypes:

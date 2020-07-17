@@ -1,10 +1,9 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ include "resource.default.name"  . }}
+  name: {{ include "resource.psp.name" . }}
   labels:
-    app: {{ include "resource.default.name"  . }}
-    giantswarm.io/service-type: "managed"
+    {{- include "labels.common" . | nindent 4 }}
 spec:
   privileged: false
   runAsUser:
