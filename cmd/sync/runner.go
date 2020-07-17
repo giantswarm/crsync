@@ -25,8 +25,10 @@ import (
 const (
 	sourceRegistryName = "quay.io"
 
-	listBurst     = 1
-	pullPushBurst = 30
+	listBurst = 1
+	// pullPushBurst when set to too big number causes docker binary
+	// (client) to be killed.
+	pullPushBurst = 5
 )
 
 type runner struct {
