@@ -36,6 +36,7 @@ spec:
         - --dst-name={{ .Values.destinationRegistry.name }}
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
         - --last-modified={{ .Values.lastModified }}
+        - --metrics-port={{ .Values.metricsPort }}
         - --loop
         env:
         - name: DST_REGISTRY_PASSWORD
