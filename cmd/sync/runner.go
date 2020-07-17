@@ -182,6 +182,8 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	processRetagJobsErrCh := make(chan error)
 	go func(ctx context.Context) {
 		processGetTagsJobErrCh <- r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
+	}(ctx)
+	go func(ctx context.Context) {
 		processRetagJobsErrCh <- r.processRetagJobs(ctx, retagJobCh)
 	}(ctx)
 	defer close(processGetTagsJobErrCh)
