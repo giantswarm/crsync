@@ -358,13 +358,17 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 	eg.Go(func() error {
 		var err error
 		srcTags, err = job.Src.ListTags(ctx, job.Repo)
-		tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
+		if err != nil {
+			tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
+		}
 		return microerror.Mask(err)
 	})
 	eg.Go(func() error {
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
-		tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+		if err != nil {
+			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+		}
 		return microerror.Mask(err)
 	})
 	err := eg.Wait()
