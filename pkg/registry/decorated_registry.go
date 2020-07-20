@@ -89,6 +89,11 @@ func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string) ([]
 
 	return ts, nil
 }
+
+func (r DecoratedRegistry) Name() string {
+	return r.underlying.Name()
+}
+
 func (r *DecoratedRegistry) Pull(ctx context.Context, repo, tag string) error {
 	var err error
 

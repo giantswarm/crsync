@@ -18,6 +18,7 @@ const (
 	flagDstRegistryPassword = "dst-password"
 	flagLastModified        = "last-modified"
 	flagLoop                = "loop"
+	flagMetricsPort         = "metrics-port"
 )
 
 type flag struct {
@@ -26,6 +27,7 @@ type flag struct {
 	DstRegistryPassword string
 	LastModified        time.Duration
 	Loop                bool
+	MetricsPort         int
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
@@ -34,6 +36,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, "", fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
 	cmd.Flags().DurationVar(&f.LastModified, flagLastModified, time.Hour, `Duration in time when source repository was last modified.`)
 	cmd.Flags().BoolVar(&f.Loop, flagLoop, false, "Whether to run the job continuously.")
+	cmd.Flags().IntVar(&f.MetricsPort, flagMetricsPort, 0, "Port on which metrics are served. 0 disables metrics.")
 }
 
 func (f *flag) Validate() error {

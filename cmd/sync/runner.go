@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
@@ -143,12 +146,29 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 		return nil
 	}
 
+	if r.flag.MetricsPort != 0 {
+		go func() {
+			fmt.Printf("Serving metrics at :%d", r.flag.MetricsPort)
+			http.Handle("/metrics", promhttp.HandlerFor(
+				prometheus.DefaultGatherer,
+				promhttp.HandlerOpts{},
+			))
+			err := http.ListenAndServe(fmt.Sprintf(":%d", r.flag.MetricsPort), nil)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed serving metrics: %s", microerror.JSON(microerror.Mask(err)))
+			}
+		}()
+	} else {
+		fmt.Println("Metrics disabled")
+	}
+
 	for {
 		start := time.Now()
 
 		err := r.sync(ctx, srcRegistry, dstRegistry)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
+			errorsTotal.Inc()
 		} else {
 			fmt.Printf("\nTook %s\n", time.Since(start))
 		}
@@ -266,6 +286,7 @@ func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob
 				tags, err := r.processGetTagsJob(ctx, job)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.JSON(err))
+					errorsTotal.Inc()
 					return
 				}
 
@@ -284,6 +305,7 @@ func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob
 					select {
 					case <-ctx.Done():
 						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.JSON(err))
+						errorsTotal.Inc()
 					case resultCh <- j:
 						// ok
 					}
@@ -319,6 +341,7 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 				err := r.processRetagJob(ctx, job)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.JSON(err))
+					errorsTotal.Inc()
 					return
 				}
 
@@ -335,11 +358,13 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 	eg.Go(func() error {
 		var err error
 		srcTags, err = job.Src.ListTags(ctx, job.Repo)
+		tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
 		return microerror.Mask(err)
 	})
 	eg.Go(func() error {
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
+		tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
 		return microerror.Mask(err)
 	})
 	err := eg.Wait()
