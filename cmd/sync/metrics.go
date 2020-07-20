@@ -13,7 +13,7 @@ var (
 			Namespace: prometheusNamespace,
 			Subsystem: prometheusSubsystem,
 			Name:      "errors_total",
-			Help:      "Number of errors occurred while synchronizing repositories",
+			Help:      "Number of errors occurred while synchronising repositories",
 		},
 	)
 
