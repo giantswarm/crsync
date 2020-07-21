@@ -198,8 +198,8 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	}
 
 	defer func(ctx context.Context) {
+		fmt.Println()
 		if r.lastLoginAt != nil && time.Since(*r.lastLoginAt) >= loginTTL {
-			fmt.Println()
 			fmt.Printf("Logging out of destination registry...\n")
 			_ = dstRegistry.Logout(ctx)
 			r.lastLoginAt = nil
