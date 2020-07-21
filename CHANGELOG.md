@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Expose Prometheus metrics for `sync` command.
+- Stay logged in between jobs for at least 24h.
 
 ### Fixed
 
