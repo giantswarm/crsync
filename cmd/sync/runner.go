@@ -32,13 +32,16 @@ const (
 	// pullPushBurst when set to too big number causes docker binary
 	// (client) to be killed.
 	pullPushBurst = 5
+	// Maximum time between logging out and logging in again.
+	loginTTL = 24 * time.Hour
 )
 
 type runner struct {
-	flag   *flag
-	logger micrologger.Logger
-	stdout io.Writer
-	stderr io.Writer
+	flag        *flag
+	logger      micrologger.Logger
+	stdout      io.Writer
+	stderr      io.Writer
+	lastLoginAt *time.Time
 }
 
 func (r *runner) Run(cmd *cobra.Command, args []string) error {
@@ -181,15 +184,26 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	var err error
 
 	fmt.Println()
-	fmt.Printf("Logging in destination registry...\n")
-	err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
-	if err != nil {
-		return microerror.Mask(err)
+
+	if r.lastLoginAt == nil {
+		fmt.Printf("Logging in destination registry...\n")
+		err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		timeNow := time.Now()
+		r.lastLoginAt = &timeNow
+	} else {
+		fmt.Printf("Already logged in\n")
 	}
+
 	defer func(ctx context.Context) {
-		fmt.Println()
-		fmt.Printf("Logging out of destination registry...\n")
-		_ = dstRegistry.Logout(ctx)
+		if r.lastLoginAt != nil && time.Since(*r.lastLoginAt) >= loginTTL {
+			fmt.Println()
+			fmt.Printf("Logging out of destination registry...\n")
+			_ = dstRegistry.Logout(ctx)
+			r.lastLoginAt = nil
+		}
 	}(ctx)
 
 	// getTagsJobCh channel has buffer 4 times bigger listing tags/repos burst to not starve
@@ -358,13 +372,17 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 	eg.Go(func() error {
 		var err error
 		srcTags, err = job.Src.ListTags(ctx, job.Repo)
-		tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
+		if err != nil {
+			tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
+		}
 		return microerror.Mask(err)
 	})
 	eg.Go(func() error {
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
-		tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+		if err != nil {
+			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+		}
 		return microerror.Mask(err)
 	})
 	err := eg.Wait()
