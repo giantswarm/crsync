@@ -1,5 +1,7 @@
 lastModified: 1h
 
+syncPrivateRepositories: false
+
 destinationRegistry:
   name: docker.io
   credentials:

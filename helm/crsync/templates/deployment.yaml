@@ -38,6 +38,7 @@ spec:
         - --last-modified={{ .Values.lastModified }}
         - --metrics-port={{ .Values.metricsPort }}
         - --loop
+        - --sync-private-repositories={{ .Values.syncPrivateRepositories}}
         env:
         - name: DST_REGISTRY_PASSWORD
           valueFrom:
