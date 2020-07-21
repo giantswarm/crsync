@@ -13,21 +13,23 @@ import (
 )
 
 const (
-	flagDstRegistryName     = "dst-name"
-	flagDstRegistryUser     = "dst-user"
-	flagDstRegistryPassword = "dst-password"
-	flagLastModified        = "last-modified"
-	flagLoop                = "loop"
-	flagMetricsPort         = "metrics-port"
+	flagDstRegistryName         = "dst-name"
+	flagDstRegistryUser         = "dst-user"
+	flagDstRegistryPassword     = "dst-password"
+	flagLastModified            = "last-modified"
+	flagLoop                    = "loop"
+	flagSyncPrivateRepositories = "sync-private-repositories"
+	flagMetricsPort             = "metrics-port"
 )
 
 type flag struct {
-	DstRegistryName     string
-	DstRegistryUser     string
-	DstRegistryPassword string
-	LastModified        time.Duration
-	Loop                bool
-	MetricsPort         int
+	DstRegistryName         string
+	DstRegistryUser         string
+	DstRegistryPassword     string
+	LastModified            time.Duration
+	Loop                    bool
+	SyncPrivateRepositories bool
+	MetricsPort             int
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
@@ -36,6 +38,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&f.DstRegistryPassword, flagDstRegistryPassword, "", fmt.Sprintf(`Destination container registry password. Defaults to %s environment variable.`, env.DstRegistryPassword))
 	cmd.Flags().DurationVar(&f.LastModified, flagLastModified, time.Hour, `Duration in time when source repository was last modified.`)
 	cmd.Flags().BoolVar(&f.Loop, flagLoop, false, "Whether to run the job continuously.")
+	cmd.Flags().BoolVar(&f.SyncPrivateRepositories, flagSyncPrivateRepositories, false, "Whether to synchronize private repositories.")
 	cmd.Flags().IntVar(&f.MetricsPort, flagMetricsPort, 0, "Port on which metrics are served. 0 disables metrics.")
 }
 

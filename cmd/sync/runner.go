@@ -66,8 +66,9 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	var srcRegistryClient registry.RegistryClient
 	{
 		c := quay.Config{
-			Namespace:    key.Namespace,
-			LastModified: r.flag.LastModified,
+			Namespace:               key.Namespace,
+			LastModified:            r.flag.LastModified,
+			SyncPrivateRepositories: r.flag.SyncPrivateRepositories,
 		}
 
 		srcRegistryClient, err = quay.New(c)
