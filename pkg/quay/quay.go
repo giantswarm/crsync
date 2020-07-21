@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/giantswarm/microerror"
 
+	"github.com/giantswarm/crsync/internal/env"
 	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (
-	publicImagesOnly   = true
 	registryEndpoint   = "https://quay.io"
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
 )
@@ -26,6 +27,7 @@ type Config struct {
 type Quay struct {
 	namespace    string
 	lastModified time.Duration
+	token        string
 
 	httpClient *http.Client
 }
@@ -34,19 +36,26 @@ func New(c Config) (*Quay, error) {
 	httpClient := &http.Client{}
 
 	if c.Namespace == "" {
-		return nil, microerror.Maskf(invalidConfigError, "Namespace must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Namespace must not be empty", c)
+	}
+
+	quayToken := os.Getenv(env.QuayApiToken)
+
+	if quayToken == "" {
+		return nil, microerror.Maskf(invalidConfigError, "Environment variable %#q must contain valid quay token", env.QuayApiToken)
 	}
 
 	return &Quay{
 		namespace:    c.Namespace,
 		lastModified: c.LastModified,
+		token:        quayToken,
 
 		httpClient: httpClient,
 	}, nil
 }
 
 func (q *Quay) Authorize(user, password string) error {
-	return microerror.Maskf(executionFailedError, "method not implemented")
+	return nil
 }
 
 func (q *Quay) ListRepositories() ([]string, error) {
@@ -57,10 +66,11 @@ func (q *Quay) ListRepositories() ([]string, error) {
 		return reposToSync, microerror.Mask(err)
 	}
 
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
+
 	query := req.URL.Query()
 	query.Add("last_modified", "true")
 	query.Add("starred", "false")
-	query.Add("public", fmt.Sprintf("%t", publicImagesOnly))
 	query.Add("namespace", q.namespace)
 	req.URL.RawQuery = query.Encode()
 
@@ -105,7 +115,14 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 	{
 		nextEndpoint := endpoint
 		for {
-			resp, err := http.Get(nextEndpoint) // #nosec G107
+			req, err := http.NewRequest("GET", nextEndpoint, nil)
+			if err != nil {
+				return nil, microerror.Mask(err)
+			}
+
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
+
+			resp, err := q.httpClient.Do(req)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
