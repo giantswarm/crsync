@@ -38,7 +38,7 @@ spec:
         - --last-modified={{ .Values.flags.lastModified }}
         - --metrics-port={{ .Values.metricsPort }}
         - --loop
-        - --sync-private-repositories={{ .Values.flags.syncPrivateRepositories}}
+        - --include-private-repositories={{ .Values.flags.includePrivateRepositories}}
         env:
         - name: DST_REGISTRY_PASSWORD
           valueFrom:

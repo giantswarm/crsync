@@ -20,16 +20,16 @@ const (
 )
 
 type Config struct {
-	Namespace               string
-	LastModified            time.Duration
+	Namespace                  string
+	LastModified               time.Duration
 	IncludePrivateRepositories bool
 }
 
 type Quay struct {
-	namespace               string
-	lastModified            time.Duration
-	token                   string
-	syncPrivateRepositories bool
+	namespace                  string
+	lastModified               time.Duration
+	token                      string
+	includePrivateRepositories bool
 
 	httpClient *http.Client
 }
@@ -48,10 +48,10 @@ func New(c Config) (*Quay, error) {
 	}
 
 	return &Quay{
-		namespace:               c.Namespace,
-		lastModified:            c.LastModified,
-		token:                   quayToken,
-		syncPrivateRepositories: c.SyncPrivateRepositories,
+		namespace:                  c.Namespace,
+		lastModified:               c.LastModified,
+		token:                      quayToken,
+		includePrivateRepositories: c.IncludePrivateRepositories,
 
 		httpClient: httpClient,
 	}, nil
@@ -96,7 +96,7 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	}
 
 	for _, repo := range data.Repositories {
-		if !repo.IsPublic && !q.syncPrivateRepositories {
+		if !repo.IsPublic && !q.includePrivateRepositories {
 			continue
 		}
 
