@@ -41,10 +41,10 @@ func New(c Config) (*Quay, error) {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Namespace must not be empty", c)
 	}
 
-	quayToken := os.Getenv(env.QuayApiToken)
+	quayToken := os.Getenv(env.QuayAPIToken)
 
 	if quayToken == "" {
-		return nil, microerror.Maskf(invalidConfigError, "Environment variable %#q must contain valid quay token", env.QuayApiToken)
+		return nil, microerror.Maskf(invalidConfigError, "Environment variable %#q must contain valid quay token", env.QuayAPIToken)
 	}
 
 	return &Quay{

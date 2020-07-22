@@ -23,6 +23,7 @@ const (
 	flagLoop                       = "loop"
 	flagIncludePrivateRepositories = "include-private-repositories"
 	flagMetricsPort                = "metrics-port"
+	flagQuayAPIToken               = "quay-api-token"
 )
 
 type flag struct {
@@ -36,6 +37,7 @@ type flag struct {
 	Loop                       bool
 	IncludePrivateRepositories bool
 	MetricsPort                int
+	QuayAPIToken               string
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
@@ -49,6 +51,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&f.Loop, flagLoop, false, "Whether to run the job continuously.")
 	cmd.Flags().BoolVar(&f.IncludePrivateRepositories, flagIncludePrivateRepositories, false, "Whether to synchronize private repositories.")
 	cmd.Flags().IntVar(&f.MetricsPort, flagMetricsPort, 0, "Port on which metrics are served. 0 disables metrics.")
+	cmd.Flags().StringVar(&f.QuayAPIToken, flagQuayAPIToken, "", `Quay container registry API token.`)
 }
 
 func (f *flag) Validate() error {
@@ -72,6 +75,12 @@ func (f *flag) Validate() error {
 	}
 	if f.SrcRegistryPassword == "" {
 		f.SrcRegistryPassword = os.Getenv(env.SrcRegistryPassword)
+	}
+	if f.SrcRegistryName == "quay.io" && f.QuayAPIToken == "" {
+		f.QuayAPIToken = os.Getenv(env.QuayAPIToken)
+	}
+	if f.SrcRegistryName == "quay.io" && f.QuayAPIToken == "" {
+		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagQuayAPIToken)
 	}
 
 	return nil
