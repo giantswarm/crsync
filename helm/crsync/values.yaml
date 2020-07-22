@@ -1,6 +1,6 @@
-lastModified: 1h
-
-syncPrivateRepositories: false
+flags:
+  lastModified: 1h
+  syncPrivateRepositories: false
 
 destinationRegistry:
   name: docker.io

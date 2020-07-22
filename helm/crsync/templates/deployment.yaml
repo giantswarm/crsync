@@ -35,10 +35,10 @@ spec:
         - sync
         - --dst-name={{ .Values.destinationRegistry.name }}
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
-        - --last-modified={{ .Values.lastModified }}
+        - --last-modified={{ .Values.flags.lastModified }}
         - --metrics-port={{ .Values.metricsPort }}
         - --loop
-        - --sync-private-repositories={{ .Values.syncPrivateRepositories}}
+        - --sync-private-repositories={{ .Values.flags.syncPrivateRepositories}}
         env:
         - name: DST_REGISTRY_PASSWORD
           valueFrom:
