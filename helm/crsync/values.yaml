@@ -2,15 +2,20 @@ flags:
   lastModified: 1h
   includePrivateRepositories: false
 
-sourceRegistry:
-  quayAPIToken: "" # token with access to read all repos
-
 destinationRegistry:
   name: docker.io
   credentials:
     user: ""
     # base64 encoded password
     password: ""
+
+sourceRegistry:
+  name: quay.io
+  credentials:
+    user: ""
+    # base64 encoded password
+    password: ""
+  quayAPIToken: "" # token with access to read all repos
 
 image:
   name: giantswarm/crsync

@@ -45,6 +45,11 @@ spec:
             secretKeyRef:
               key: destination-registry-password
               name: {{ include "resource.default.name"  . }}
+        - name: SRC_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: source-registry-password
+              name: {{ include "resource.default.name"  . }}
         - name: QUAY_API_TOKEN
           valueFrom:
             secretKeyRef:
