@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Fix listing tags in `quay.io` registry.
+
 ## [0.5.2] - 2020-07-22
 
 ### Added
