@@ -73,6 +73,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 			c := quay.Config{
 				Namespace:                  key.Namespace,
 				LastModified:               r.flag.LastModified,
+				Token:                      r.flag.QuayAPIToken,
 				IncludePrivateRepositories: r.flag.IncludePrivateRepositories,
 			}
 
