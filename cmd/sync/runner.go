@@ -68,16 +68,23 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	var srcRegistryClient registry.RegistryClient
 	{
-		c := quay.Config{
-			Namespace:                  key.Namespace,
-			LastModified:               r.flag.LastModified,
-			IncludePrivateRepositories: r.flag.IncludePrivateRepositories,
+		switch registryName := r.flag.SrcRegistryName; {
+		case registryName == "quay.io":
+			c := quay.Config{
+				Namespace:                  key.Namespace,
+				LastModified:               r.flag.LastModified,
+				IncludePrivateRepositories: r.flag.IncludePrivateRepositories,
+			}
+
+			srcRegistryClient, err = quay.New(c)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+
+		default:
+			return microerror.Maskf(executionFailedError, "unknown container registry %#q", registryName)
 		}
 
-		srcRegistryClient, err = quay.New(c)
-		if err != nil {
-			return microerror.Mask(err)
-		}
 	}
 
 	var srcRegistry registry.Interface
@@ -187,6 +194,12 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	fmt.Println()
 
 	if r.lastLoginAt == nil {
+		fmt.Printf("Logging in source registry...\n")
+		err = srcRegistry.Login(ctx, r.flag.SrcRegistryUser, r.flag.SrcRegistryPassword)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
 		fmt.Printf("Logging in destination registry...\n")
 		err = dstRegistry.Login(ctx, r.flag.DstRegistryUser, r.flag.DstRegistryPassword)
 		if err != nil {
@@ -201,6 +214,8 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	defer func(ctx context.Context) {
 		fmt.Println()
 		if r.lastLoginAt != nil && time.Since(*r.lastLoginAt) >= loginTTL {
+			fmt.Printf("Logging out of source registry...\n")
+			_ = srcRegistry.Logout(ctx)
 			fmt.Printf("Logging out of destination registry...\n")
 			_ = dstRegistry.Logout(ctx)
 			r.lastLoginAt = nil
