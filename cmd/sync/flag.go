@@ -23,7 +23,7 @@ const (
 	flagLoop                       = "loop"
 	flagIncludePrivateRepositories = "include-private-repositories"
 	flagMetricsPort                = "metrics-port"
-	flagQuayAPIToken               = "quay-api-token"
+	flagQuayAPIToken               = "quay-api-token" // nolint
 )
 
 type flag struct {
@@ -76,10 +76,10 @@ func (f *flag) Validate() error {
 	if f.SrcRegistryPassword == "" {
 		f.SrcRegistryPassword = os.Getenv(env.SrcRegistryPassword)
 	}
-	if f.SrcRegistryName == "quay.io" && f.QuayAPIToken == "" {
+	if f.SrcRegistryName == sourceRegistryName && f.QuayAPIToken == "" {
 		f.QuayAPIToken = os.Getenv(env.QuayAPIToken)
 	}
-	if f.SrcRegistryName == "quay.io" && f.QuayAPIToken == "" {
+	if f.SrcRegistryName == sourceRegistryName && f.QuayAPIToken == "" {
 		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagQuayAPIToken)
 	}
 
