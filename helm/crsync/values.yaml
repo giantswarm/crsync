@@ -15,8 +15,8 @@ sourceRegistry:
     user: ""
     # base64 encoded password
     password: ""
-  quayAPIToken: "" # token with access to read all repos
-
+  # token with access to read all repos
+  quayAPIToken: "" 
 image:
   name: giantswarm/crsync
   tag: "[[ .Version ]]"
