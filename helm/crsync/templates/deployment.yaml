@@ -37,10 +37,10 @@ spec:
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
         - --src-name={{ .Values.sourceRegistry.name }}
         - --src-user={{ .Values.sourceRegistry.credentials.user }}
-        - --last-modified={{ .Values.flags.lastModified }}
-        - --metrics-port={{ .Values.metricsPort }}
-        - --loop
         - --include-private-repositories={{ .Values.flags.includePrivateRepositories}}
+        - --last-modified={{ .Values.flags.lastModified }}
+        - --metrics-port={{ .Values.flags.metricsPort }}
+        - --loop
         env:
         - name: DST_REGISTRY_PASSWORD
           valueFrom:

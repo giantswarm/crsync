@@ -1,6 +1,7 @@
 flags:
-  lastModified: 1h
   includePrivateRepositories: false
+  lastModified: 1h
+  metricsPort: 8000
 
 destinationRegistry:
   name: docker.io
@@ -24,8 +25,6 @@ Installation:
   V1:
     Registry:
       Domain: quay.io
-
-metricsPort: 8000
 
 project:
   branch: "[[ .Branch ]]"
