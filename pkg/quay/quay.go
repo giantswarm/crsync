@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/giantswarm/microerror"
 
-	"github.com/giantswarm/crsync/internal/env"
 	"github.com/giantswarm/crsync/pkg/registry"
 )
 
@@ -22,6 +20,7 @@ const (
 type Config struct {
 	Namespace                  string
 	LastModified               time.Duration
+	Token                      string
 	IncludePrivateRepositories bool
 }
 
@@ -40,17 +39,14 @@ func New(c Config) (*Quay, error) {
 	if c.Namespace == "" {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Namespace must not be empty", c)
 	}
-
-	quayToken := os.Getenv(env.QuayAPIToken)
-
-	if quayToken == "" {
-		return nil, microerror.Maskf(invalidConfigError, "Environment variable %#q must contain valid quay token", env.QuayAPIToken)
+	if c.IncludePrivateRepositories && c.Token == "" {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Token must not be empty", c)
 	}
 
 	return &Quay{
 		namespace:                  c.Namespace,
 		lastModified:               c.LastModified,
-		token:                      quayToken,
+		token:                      c.Token,
 		includePrivateRepositories: c.IncludePrivateRepositories,
 
 		httpClient: httpClient,
