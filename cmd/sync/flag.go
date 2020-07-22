@@ -51,7 +51,7 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&f.Loop, flagLoop, false, "Whether to run the job continuously.")
 	cmd.Flags().BoolVar(&f.IncludePrivateRepositories, flagIncludePrivateRepositories, false, "Whether to synchronize private repositories.")
 	cmd.Flags().IntVar(&f.MetricsPort, flagMetricsPort, 0, "Port on which metrics are served. 0 disables metrics.")
-	cmd.Flags().StringVar(&f.QuayAPIToken, flagQuayAPIToken, "", `Quay container registry API token.`)
+	cmd.Flags().StringVar(&f.QuayAPIToken, flagQuayAPIToken, "", fmt.Sprintf(`Quay container registry API token. Defaults to %s environment variable.`, env.QuayAPIToken))
 }
 
 func (f *flag) Validate() error {
