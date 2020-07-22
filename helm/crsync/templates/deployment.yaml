@@ -35,6 +35,8 @@ spec:
         - sync
         - --dst-name={{ .Values.destinationRegistry.name }}
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
+        - --src-name={{ .Values.sourceRegistry.name }}
+        - --src-user={{ .Values.sourceRegistry.credentials.user }}
         - --last-modified={{ .Values.flags.lastModified }}
         - --metrics-port={{ .Values.metricsPort }}
         - --loop
