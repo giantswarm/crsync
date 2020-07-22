@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/giantswarm/microerror"
-
-	"github.com/giantswarm/crsync/pkg/registry"
 )
 
 const (
@@ -106,24 +105,34 @@ func (q *Quay) ListRepositories() ([]string, error) {
 }
 
 func (q *Quay) ListTags(repository string) ([]string, error) {
-	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", registryEndpoint, repository)
+	endpoint := fmt.Sprintf("%s/api/v1/repository/%s/tag/", registryEndpoint, repository)
 
-	type tagsJSON struct {
-		Tags []string `json:"tags"`
+	type dataJSON struct {
+		HasAdditional bool `json:"has_additional"`
+		Tags          []struct {
+			Name string `json:"name"`
+		} `json:"tags"`
 	}
 
-	var tagsData tagsJSON
+	var tagsData dataJSON
 
 	var tags []string
 	{
-		nextEndpoint := endpoint
-		for {
-			req, err := http.NewRequest("GET", nextEndpoint, nil)
+		page := 1
+		hasAdditional := true
+		for hasAdditional {
+			req, err := http.NewRequest("GET", endpoint, nil)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
 
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
+
+			query := req.URL.Query()
+			query.Add("page", strconv.Itoa(page))
+			query.Add("onlyActiveTags", fmt.Sprintf("%t", true))
+
+			req.URL.RawQuery = query.Encode()
 
 			resp, err := q.httpClient.Do(req)
 			if err != nil {
@@ -141,14 +150,12 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 				return nil, microerror.Mask(err)
 			}
 
-			tags = append(tags, tagsData.Tags...)
-
-			linkHeader := resp.Header.Get("Link")
-			if linkHeader == "" {
-				break
+			for _, tag := range tagsData.Tags {
+				tags = append(tags, tag.Name)
 			}
 
-			nextEndpoint = fmt.Sprintf("%s%s", registryEndpoint, registry.GetLink(linkHeader))
+			hasAdditional = tagsData.HasAdditional
+			page++
 		}
 	}
 
