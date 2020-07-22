@@ -1,4 +1,7 @@
-lastModified: 1h
+flags:
+  includePrivateRepositories: false
+  lastModified: 1h
+  metricsPort: 8000
 
 destinationRegistry:
   name: docker.io
@@ -7,6 +10,14 @@ destinationRegistry:
     # base64 encoded password
     password: ""
 
+sourceRegistry:
+  name: quay.io
+  credentials:
+    user: ""
+    # base64 encoded password
+    password: ""
+  # token with access to read all repos
+  quayAPIToken: ""
 image:
   name: giantswarm/crsync
   tag: "[[ .Version ]]"
@@ -14,8 +25,6 @@ Installation:
   V1:
     Registry:
       Domain: quay.io
-
-metricsPort: 8000
 
 project:
   branch: "[[ .Branch ]]"

@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `quay` container registry authorization.
+- Add synchronization for private repositories.
+
 ## [0.5.1] - 2020-07-22
 
 ### Fixed
 
 - Measure tag count in case of **no** errors.
+
 
 ## [0.5.0] - 2020-07-21
 

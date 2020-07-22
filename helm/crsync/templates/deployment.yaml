@@ -35,14 +35,27 @@ spec:
         - sync
         - --dst-name={{ .Values.destinationRegistry.name }}
         - --dst-user={{ .Values.destinationRegistry.credentials.user }}
-        - --last-modified={{ .Values.lastModified }}
-        - --metrics-port={{ .Values.metricsPort }}
+        - --src-name={{ .Values.sourceRegistry.name }}
+        - --src-user={{ .Values.sourceRegistry.credentials.user }}
+        - --include-private-repositories={{ .Values.flags.includePrivateRepositories}}
+        - --last-modified={{ .Values.flags.lastModified }}
+        - --metrics-port={{ .Values.flags.metricsPort }}
         - --loop
         env:
         - name: DST_REGISTRY_PASSWORD
           valueFrom:
             secretKeyRef:
               key: destination-registry-password
+              name: {{ include "resource.default.name"  . }}
+        - name: SRC_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: source-registry-password
+              name: {{ include "resource.default.name"  . }}
+        - name: QUAY_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: quay-api-token
               name: {{ include "resource.default.name"  . }}
         image: "{{ .Values.Installation.V1.Registry.Domain }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
         imagePullPolicy: Always

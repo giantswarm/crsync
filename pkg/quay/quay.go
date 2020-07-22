@@ -13,19 +13,22 @@ import (
 )
 
 const (
-	publicImagesOnly   = true
 	registryEndpoint   = "https://quay.io"
 	repositoryEndpoint = "https://quay.io/api/v1/repository"
 )
 
 type Config struct {
-	Namespace    string
-	LastModified time.Duration
+	Namespace                  string
+	LastModified               time.Duration
+	Token                      string
+	IncludePrivateRepositories bool
 }
 
 type Quay struct {
-	namespace    string
-	lastModified time.Duration
+	namespace                  string
+	lastModified               time.Duration
+	token                      string
+	includePrivateRepositories bool
 
 	httpClient *http.Client
 }
@@ -34,19 +37,24 @@ func New(c Config) (*Quay, error) {
 	httpClient := &http.Client{}
 
 	if c.Namespace == "" {
-		return nil, microerror.Maskf(invalidConfigError, "Namespace must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "%T.Namespace must not be empty", c)
+	}
+	if c.IncludePrivateRepositories && c.Token == "" {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Token must not be empty", c)
 	}
 
 	return &Quay{
-		namespace:    c.Namespace,
-		lastModified: c.LastModified,
+		namespace:                  c.Namespace,
+		lastModified:               c.LastModified,
+		token:                      c.Token,
+		includePrivateRepositories: c.IncludePrivateRepositories,
 
 		httpClient: httpClient,
 	}, nil
 }
 
 func (q *Quay) Authorize(user, password string) error {
-	return microerror.Maskf(executionFailedError, "method not implemented")
+	return nil
 }
 
 func (q *Quay) ListRepositories() ([]string, error) {
@@ -57,10 +65,11 @@ func (q *Quay) ListRepositories() ([]string, error) {
 		return reposToSync, microerror.Mask(err)
 	}
 
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
+
 	query := req.URL.Query()
 	query.Add("last_modified", "true")
 	query.Add("starred", "false")
-	query.Add("public", fmt.Sprintf("%t", publicImagesOnly))
 	query.Add("namespace", q.namespace)
 	req.URL.RawQuery = query.Encode()
 
@@ -83,6 +92,10 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	}
 
 	for _, repo := range data.Repositories {
+		if !repo.IsPublic && !q.includePrivateRepositories {
+			continue
+		}
+
 		lastModifiedTimestamp := time.Now().Add(-1 * q.lastModified).Unix()
 		if int64(repo.LastModified) > lastModifiedTimestamp {
 			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
@@ -105,7 +118,14 @@ func (q *Quay) ListTags(repository string) ([]string, error) {
 	{
 		nextEndpoint := endpoint
 		for {
-			resp, err := http.Get(nextEndpoint) // #nosec G107
+			req, err := http.NewRequest("GET", nextEndpoint, nil)
+			if err != nil {
+				return nil, microerror.Mask(err)
+			}
+
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
+
+			resp, err := q.httpClient.Do(req)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
