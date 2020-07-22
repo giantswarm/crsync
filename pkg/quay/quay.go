@@ -22,7 +22,7 @@ const (
 type Config struct {
 	Namespace               string
 	LastModified            time.Duration
-	SyncPrivateRepositories bool
+	IncludePrivateRepositories bool
 }
 
 type Quay struct {
