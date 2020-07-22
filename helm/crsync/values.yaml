@@ -2,6 +2,9 @@ flags:
   lastModified: 1h
   includePrivateRepositories: false
 
+sourceRegistry:
+  quayAPIToken: "" # token with access to read all repos
+
 destinationRegistry:
   name: docker.io
   credentials:
