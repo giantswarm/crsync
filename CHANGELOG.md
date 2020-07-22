@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2020-07-22
+
 ### Fixed
 
 - Measure tag count in case of **no** errors.
@@ -73,7 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/giantswarm/crsync/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/giantswarm/crsync/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/giantswarm/crsync/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/giantswarm/crsync/compare/v0.3.0...v0.4.0
