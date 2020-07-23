@@ -73,7 +73,6 @@ spec:
         ports:
         - name: metrics
           containerPort: {{ .Values.flags.metricsPort }}
-          hostPort: {{ .Values.flags.metricsPort }}
       serviceAccount: {{ include "resource.default.name"  . }}
       serviceAccountName: {{ include "resource.default.name"  . }}
       volumes:
