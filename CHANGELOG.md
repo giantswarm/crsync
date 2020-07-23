@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Shorten port names to fit <15 chars convention.
+
 ## [0.5.5] - 2020-07-23
 
 ## [0.5.4] - 2020-07-23
