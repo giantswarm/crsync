@@ -72,8 +72,8 @@ spec:
             memory: 100Mi
         ports:
         - name: prometheus-metrics
-          port: {{ .Values.flags.metricsPort }}
-          targetPort: {{ .Values.flags.metricsPort }}
+          containerPort: {{ .Values.flags.metricsPort }}
+          hostPort: {{ .Values.flags.metricsPort }}
       serviceAccount: {{ include "resource.default.name"  . }}
       serviceAccountName: {{ include "resource.default.name"  . }}
       volumes:
