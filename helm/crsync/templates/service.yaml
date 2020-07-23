@@ -6,12 +6,13 @@ metadata:
   labels:
     {{- include "labels.common" . | nindent 4 }}
   annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: {{ .Values.metricsPort | quote }}
+    giantswarm.io/monitoring: "true"
+    giantswarm.io/monitoring-path: "metrics"
+    giantswarm.io/monitoring-port: {{ .Values.flags.metricsPort | quote }}
 spec:
   ports:
     - name: prometheus-metrics
-      port: {{ .Values.metricsPort }}
-      targetPort: {{ .Values.metricsPort }}
+      port: {{ .Values.flags.metricsPort }}
+      targetPort: {{ .Values.flags.metricsPort }}
   selector:
     {{- include "labels.selector" . | nindent 4 }}

@@ -9,6 +9,10 @@ spec:
   podSelector:
     matchLabels:
       {{- include "labels.selector" . | nindent 6 }}
+  ingress:
+  - ports:
+    - port: {{ .Values.flags.metricsPort }}
+      protocol: TCP
   egress:
   - {}
   policyTypes:
