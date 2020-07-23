@@ -11,7 +11,7 @@ metadata:
     giantswarm.io/monitoring-port: {{ .Values.flags.metricsPort | quote }}
 spec:
   ports:
-    - name: prometheus-metrics
+    - name: metrics
       port: {{ .Values.flags.metricsPort }}
       targetPort: {{ .Values.flags.metricsPort }}
   selector:
