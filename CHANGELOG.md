@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+
+### Fixed
 
 - Fix listing tags in `quay.io` registry.
+
+## [0.5.3] - 2020-07-23
+
+### Fixed
+
+- Fix network policy and service to be visible to Prometheus as a target.
 
 ## [0.5.2] - 2020-07-22
 
@@ -87,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/giantswarm/crsync/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/giantswarm/crsync/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/giantswarm/crsync/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/giantswarm/crsync/compare/v0.4.1...v0.5.0
