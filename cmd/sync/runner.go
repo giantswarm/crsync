@@ -229,7 +229,7 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
 	// processing.
-	retagJobCh := make(chan retagJob, pullPushBurst)
+	retagJobCh := make(chan retagJob, pullPushBurst*2)
 
 	processGetTagsJobErrCh := make(chan error)
 	processRetagJobsErrCh := make(chan error)
@@ -450,8 +450,8 @@ func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, 
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
 			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), listBurst),
 			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), listBurst),
-			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
-			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
+			Pull:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
+			Push:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
 		},
 		Underlying: reg,
 	}
