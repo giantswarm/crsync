@@ -31,7 +31,7 @@ const (
 	listBurst = 1
 	// pullPushBurst when set to too big number causes docker binary
 	// (client) to be killed.
-	pullPushBurst = 2
+	pullPushBurst = 1
 	// Maximum time between logging out and logging in again.
 	loginTTL = 24 * time.Hour
 )
