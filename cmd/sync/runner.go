@@ -31,7 +31,7 @@ const (
 	listBurst = 1
 	// pullPushBurst when set to too big number causes docker binary
 	// (client) to be killed.
-	pullPushBurst = 3
+	pullPushBurst = 2
 	// Maximum time between logging out and logging in again.
 	loginTTL = 24 * time.Hour
 )
@@ -229,7 +229,7 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
 	// processing.
-	retagJobCh := make(chan retagJob, pullPushBurst*2)
+	retagJobCh := make(chan retagJob, pullPushBurst)
 
 	processGetTagsJobErrCh := make(chan error)
 	processRetagJobsErrCh := make(chan error)
