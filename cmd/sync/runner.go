@@ -31,7 +31,7 @@ const (
 	listBurst = 1
 	// pullPushBurst when set to too big number causes docker binary
 	// (client) to be killed.
-	pullPushBurst = 5
+	pullPushBurst = 1
 	// Maximum time between logging out and logging in again.
 	loginTTL = 24 * time.Hour
 )
@@ -450,8 +450,8 @@ func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, 
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
 			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), listBurst),
 			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), listBurst),
-			Pull:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
-			Push:             rate.NewLimiter(rate.Every(100*time.Millisecond), pullPushBurst),
+			Pull:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
+			Push:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
 		},
 		Underlying: reg,
 	}
