@@ -398,7 +398,7 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
 		if err == nil {
-			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(dstTags)))
 		}
 		return microerror.Mask(err)
 	})
