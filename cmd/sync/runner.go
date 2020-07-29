@@ -160,7 +160,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	if r.flag.MetricsPort != 0 {
 		go func() {
-			fmt.Printf("Serving metrics at :%d", r.flag.MetricsPort)
+			fmt.Printf("Serving metrics at :%d\n", r.flag.MetricsPort)
 			http.Handle("/metrics", promhttp.HandlerFor(
 				prometheus.DefaultGatherer,
 				promhttp.HandlerOpts{},
@@ -398,7 +398,7 @@ func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]strin
 		var err error
 		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
 		if err == nil {
-			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(srcTags)))
+			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(dstTags)))
 		}
 		return microerror.Mask(err)
 	})
