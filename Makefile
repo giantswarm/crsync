@@ -5,7 +5,7 @@
 
 PACKAGE_DIR    := ./bin-dist
 
-APPLICATION    := $(shell basename $(shell go list .))
+APPLICATION    := $(shell go list . | cut -d '/' -f 3)
 BUILDTIMESTAMP := $(shell date -u '+%FT%TZ')
 GITSHA1        := $(shell git rev-parse --verify HEAD)
 OS             := $(shell go env GOOS)
@@ -13,8 +13,7 @@ SOURCES        := $(shell find . -name '*.go')
 VERSION        := $(shell architect project version)
 LDFLAGS        ?= -w -linkmode 'auto' -extldflags '-static' \
   -X '$(shell go list .)/pkg/project.buildTimestamp=${BUILDTIMESTAMP}' \
-  -X '$(shell go list .)/pkg/project.gitSHA=${GITSHA1}' \
-  -X '$(shell go list .)/pkg/project.version=${VERSION}'
+  -X '$(shell go list .)/pkg/project.gitSHA=${GITSHA1}'
 .DEFAULT_GOAL := build
 
 .PHONY: build build-darwin build-linux
@@ -42,7 +41,7 @@ $(APPLICATION)-linux: $(APPLICATION)-v$(VERSION)-linux-amd64
 
 $(APPLICATION)-v$(VERSION)-%-amd64: $(SOURCES)
 	@echo "====> $@"
-	GOOS=$* GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $@ .
+	CGO_ENABLED=0 GOOS=$* GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $@ .
 
 .PHONY: package-darwin package-linux
 ## package-darwin: prepares a packaged darwin/amd64 version
