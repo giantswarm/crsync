@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Increase memory limit from 100mb to 500mb.
+
 ## [0.5.8] - 2020-07-29
 
 ### Changed
