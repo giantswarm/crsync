@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2021-01-28
+
 ### Changed
 
 - Increase memory limit from 100mb to 500mb.
@@ -126,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.8...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.9...HEAD
+[0.5.9]: https://github.com/giantswarm/crsync/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/giantswarm/crsync/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/giantswarm/crsync/compare/v0.5.6...v0.5.7
 [0.5.6]: https://github.com/giantswarm/crsync/compare/v0.5.5...v0.5.6
