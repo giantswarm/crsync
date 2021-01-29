@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2021-01-29
+
 ### Fixed
 
 - Handle error responses on listing tags from Docker Hub.
@@ -133,7 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.9...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.10...HEAD
+[0.5.10]: https://github.com/giantswarm/crsync/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/giantswarm/crsync/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/giantswarm/crsync/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/giantswarm/crsync/compare/v0.5.6...v0.5.7
