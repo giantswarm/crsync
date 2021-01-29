@@ -13,6 +13,7 @@ import (
 const (
 	authEndpoint    = "https://hub.docker.com"
 	registryAddress = "https://index.docker.io" // nolint
+	tagsPerPage     = 10
 )
 
 type Config struct {
@@ -71,9 +72,11 @@ func (d *DockerHub) ListRepositories() ([]string, error) {
 }
 
 func (d *DockerHub) ListTags(repository string) ([]string, error) {
-	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/", authEndpoint, repository)
+	page := 1
+	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/?page=%d", authEndpoint, repository, page)
 
 	type dockerHubTags struct {
+		Count   int    `json:"count"`
 		Next    string `json:"next"`
 		Results []struct {
 			Name string `json:"name"`
@@ -105,6 +108,10 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 				return []string{}, microerror.Mask(err)
 			}
 
+			if resp.StatusCode != http.StatusOK {
+				return []string{}, microerror.Maskf(executionFailedError, fmt.Sprintf("Expected status code '%d', got '%d': %v", http.StatusOK, resp.StatusCode, string(body)))
+			}
+
 			err = json.Unmarshal(body, &tagsJSON)
 			if err != nil {
 				return []string{}, microerror.Mask(err)
@@ -114,11 +121,13 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 				tags = append(tags, tag.Name)
 			}
 
-			if tagsJSON.Next == "" || tagsJSON.Next == nextEndpoint {
+			numOfPages := (tagsJSON.Count / tagsPerPage) + 1
+			if page == numOfPages {
 				break
 			}
 
 			nextEndpoint = tagsJSON.Next
+			page += 1
 		}
 	}
 

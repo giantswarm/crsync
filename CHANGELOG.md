@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle error responses on listing tags from Docker Hub.
+- Calculate next endpoint based on number of tags in repository.
+
 ## [0.5.9] - 2021-01-28
 
 ### Changed
