@@ -24,6 +24,7 @@ const (
 	flagIncludePrivateRepositories = "include-private-repositories"
 	flagMetricsPort                = "metrics-port"
 	flagQuayAPIToken               = "quay-api-token" // nolint
+	flagSyncInterval               = "sync-interval"
 )
 
 type flag struct {
@@ -38,6 +39,7 @@ type flag struct {
 	IncludePrivateRepositories bool
 	MetricsPort                int
 	QuayAPIToken               string
+	SyncInterval               int
 }
 
 func (f *flag) Init(cmd *cobra.Command) {
@@ -52,6 +54,8 @@ func (f *flag) Init(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&f.IncludePrivateRepositories, flagIncludePrivateRepositories, false, "Whether to synchronize private repositories.")
 	cmd.Flags().IntVar(&f.MetricsPort, flagMetricsPort, 0, "Port on which metrics are served. 0 disables metrics.")
 	cmd.Flags().StringVar(&f.QuayAPIToken, flagQuayAPIToken, "", fmt.Sprintf(`Quay container registry API token. Defaults to %s environment variable.`, env.QuayAPIToken))
+	cmd.Flags().IntVar(&f.SyncInterval, flagSyncInterval, 30, "Interval(seconds) between two syncs when running in a loop.")
+
 }
 
 func (f *flag) Validate() error {
@@ -78,9 +82,6 @@ func (f *flag) Validate() error {
 	}
 	if f.SrcRegistryName == sourceRegistryName && f.QuayAPIToken == "" {
 		f.QuayAPIToken = os.Getenv(env.QuayAPIToken)
-	}
-	if f.SrcRegistryName == sourceRegistryName && f.QuayAPIToken == "" {
-		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagQuayAPIToken)
 	}
 
 	return nil

@@ -185,7 +185,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 			fmt.Printf("\nTook %s\n", time.Since(start))
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Duration(r.flag.SyncInterval) * time.Second)
 	}
 }
 
