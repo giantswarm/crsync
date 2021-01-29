@@ -109,7 +109,7 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 			}
 
 			if resp.StatusCode != http.StatusOK {
-				return []string{}, microerror.Maskf(executionFailedError, fmt.Sprintf("Expected status code %#d, got %#d: %v", http.StatusOK, resp.StatusCode, string(body)))
+				return []string{}, microerror.Maskf(executionFailedError, fmt.Sprintf("Expected status code '%d', got '%d': %v", http.StatusOK, resp.StatusCode, string(body)))
 			}
 
 			err = json.Unmarshal(body, &tagsJSON)
