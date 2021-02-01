@@ -17,7 +17,6 @@ import (
 const (
 	authEndpoint    = "https://hub.docker.com"
 	registryAddress = "https://index.docker.io" // nolint
-	tagsPerPage     = 10
 )
 
 type Config struct {
