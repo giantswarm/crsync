@@ -1,6 +1,7 @@
 package quay
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -52,11 +53,11 @@ func New(c Config) (*Quay, error) {
 	}, nil
 }
 
-func (q *Quay) Authorize(user, password string) error {
+func (q *Quay) Authorize(ctx context.Context, user, password string) error {
 	return nil
 }
 
-func (q *Quay) ListRepositories() ([]string, error) {
+func (q *Quay) ListRepositories(ctx context.Context) ([]string, error) {
 	var reposToSync []string
 
 	req, err := http.NewRequest("GET", repositoryEndpoint, nil)
@@ -104,7 +105,7 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	return reposToSync, nil
 }
 
-func (q *Quay) ListTags(repository string) ([]string, error) {
+func (q *Quay) ListTags(ctx context.Context, repository string) ([]string, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/repository/%s/tag/", registryEndpoint, repository)
 
 	type dataJSON struct {

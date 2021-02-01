@@ -1,7 +1,9 @@
 package registry
 
+import "context"
+
 type RegistryClient interface {
-	Authorize(user, password string) error
-	ListRepositories() ([]string, error)
-	ListTags(repositry string) ([]string, error)
+	Authorize(ctx context.Context, user, password string) error
+	ListRepositories(ctx context.Context) ([]string, error)
+	ListTags(ctx context.Context, repositry string) ([]string, error)
 }

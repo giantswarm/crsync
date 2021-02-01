@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Print errors pretty.
 
+### Fixed
+
+- List Docker Hub tags with Registry V2 API to avoid hitting limits.
+
 ## [0.5.10] - 2021-01-29
 
 ### Fixed

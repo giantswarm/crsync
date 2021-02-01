@@ -47,7 +47,7 @@ func (r *Registry) Login(ctx context.Context, user, password string) error {
 		return microerror.Mask(err)
 	}
 
-	err = r.authorize(user, password)
+	err = r.authorize(ctx, user, password)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -72,16 +72,16 @@ func (r *Registry) Logout(ctx context.Context) error {
 	return nil
 }
 
-func (r *Registry) authorize(user, password string) error {
-	return r.registryClient.Authorize(user, password)
+func (r *Registry) authorize(ctx context.Context, user, password string) error {
+	return r.registryClient.Authorize(ctx, user, password)
 }
 
 func (r *Registry) ListRepositories(ctx context.Context) ([]string, error) {
-	return r.registryClient.ListRepositories()
+	return r.registryClient.ListRepositories(ctx)
 }
 
 func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
-	return r.registryClient.ListTags(repository)
+	return r.registryClient.ListTags(ctx, repository)
 }
 
 func (r Registry) Name() string {
