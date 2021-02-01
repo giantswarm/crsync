@@ -1,13 +1,13 @@
 # DO NOT EDIT. Generated with:
 #
-#    devctl@4.2.0
+#    devctl@4.2.1
 #
 name: Create Release
 on:
   push:
     branches:
       - 'legacy'
-	  - 'main'
+      - 'main'
       - 'master'
       - 'release-v*.*.x'
       # "!" negates previous positive patterns so it has to be at the end.
