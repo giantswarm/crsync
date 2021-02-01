@@ -67,11 +67,15 @@ func (d *DockerHub) Authorize(user, password string) error {
 	return nil
 }
 
+func (d *DockerHub) CountTags(repository string) (int, error) {
+	return 0, microerror.Maskf(executionFailedError, "method not implemented")
+}
+
 func (d *DockerHub) ListRepositories() ([]string, error) {
 	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
-func (d *DockerHub) ListTags(repository string) ([]string, error) {
+func (d *DockerHub) ListTags(repository string, limit int) ([]string, error) {
 	page := 1
 	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/?page=%d", authEndpoint, repository, page)
 
@@ -117,9 +121,14 @@ func (d *DockerHub) ListTags(repository string) ([]string, error) {
 				return []string{}, microerror.Mask(err)
 			}
 
-			for _, tag := range tagsJSON.Results {
+			fmt.Printf("\nRepo: %s | Page: %d\n", repository, page)
+
+			for i, tag := range tagsJSON.Results {
+				fmt.Printf("%d: tag: %s\n", i+1, tag.Name)
 				tags = append(tags, tag.Name)
 			}
+
+			fmt.Println()
 
 			numOfPages := (tagsJSON.Count / tagsPerPage) + 1
 			if page == numOfPages {

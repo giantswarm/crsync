@@ -56,6 +56,10 @@ func (q *Quay) Authorize(user, password string) error {
 	return nil
 }
 
+func (q *Quay) CountTags(repository string) (int, error) {
+	return 0, microerror.Maskf(executionFailedError, "method not implemented")
+}
+
 func (q *Quay) ListRepositories() ([]string, error) {
 	var reposToSync []string
 
@@ -67,7 +71,6 @@ func (q *Quay) ListRepositories() ([]string, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", q.token))
 
 	query := req.URL.Query()
-	query.Add("last_modified", "true")
 	query.Add("starred", "false")
 	query.Add("namespace", q.namespace)
 	req.URL.RawQuery = query.Encode()
@@ -95,16 +98,13 @@ func (q *Quay) ListRepositories() ([]string, error) {
 			continue
 		}
 
-		lastModifiedTimestamp := time.Now().Add(-1 * q.lastModified).Unix()
-		if int64(repo.LastModified) > lastModifiedTimestamp {
-			reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
-		}
+		reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
 	}
 
 	return reposToSync, nil
 }
 
-func (q *Quay) ListTags(repository string) ([]string, error) {
+func (q *Quay) ListTags(repository string, limit int) ([]string, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/repository/%s/tag/", registryEndpoint, repository)
 
 	type dataJSON struct {

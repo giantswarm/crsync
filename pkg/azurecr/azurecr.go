@@ -46,11 +46,15 @@ func (d *AzureCR) Authorize(user, password string) error {
 	return nil
 }
 
+func (d *AzureCR) CountTags(repository string) (int, error) {
+	return 0, microerror.Maskf(executionFailedError, "method not implemented")
+}
+
 func (d *AzureCR) ListRepositories() ([]string, error) {
 	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
-func (d *AzureCR) ListTags(repository string) ([]string, error) {
+func (d *AzureCR) ListTags(repository string, limit int) ([]string, error) {
 	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", d.registryEndpoint, repository)
 
 	type azureCRTags struct {

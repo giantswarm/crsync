@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/giantswarm/crsync/internal/key"
@@ -150,7 +149,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	}
 
 	if !r.flag.Loop {
-		err := r.sync(ctx, srcRegistry, dstRegistry)
+		err := r.sync(ctx, srcRegistry, dstRegistry, r.flag.Repo)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -177,7 +176,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	for {
 		start := time.Now()
 
-		err := r.sync(ctx, srcRegistry, dstRegistry)
+		err := r.sync(ctx, srcRegistry, dstRegistry, r.flag.Repo)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
 			errorsTotal.Inc()
@@ -189,7 +188,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 	}
 }
 
-func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface) error {
+func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Interface, repo string) error {
 	var err error
 
 	fmt.Println()
@@ -229,7 +228,7 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
 	// processing.
-	retagJobCh := make(chan retagJob, pullPushBurst*2)
+	retagJobCh := make(chan retagJob, pullPushBurst)
 
 	processGetTagsJobErrCh := make(chan error)
 	processRetagJobsErrCh := make(chan error)
@@ -244,11 +243,15 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 
 	fmt.Println()
 	fmt.Printf("Reading list of repositories to sync from source registry...\n")
-	reposToSync, err := srcRegistry.ListRepositories(ctx)
-	if err != nil {
-		return microerror.Mask(err)
+	var reposToSync []string
+	if repo == "" {
+		reposToSync, err = srcRegistry.ListRepositories(ctx)
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	} else {
+		reposToSync = []string{repo}
 	}
-
 	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
 	if len(reposToSync) > 0 {
 		fmt.Println()
@@ -384,28 +387,26 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 
 func (r *runner) processGetTagsJob(ctx context.Context, job getTagsJob) ([]string, error) {
 	var srcTags, dstTags []string
+	var err error
 
-	eg := new(errgroup.Group)
-	eg.Go(func() error {
-		var err error
-		srcTags, err = job.Src.ListTags(ctx, job.Repo)
-		if err == nil {
-			tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
-		}
-		return microerror.Mask(err)
-	})
-	eg.Go(func() error {
-		var err error
-		dstTags, err = job.Dst.ListTags(ctx, job.Repo)
-		if err == nil {
-			tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(dstTags)))
-		}
-		return microerror.Mask(err)
-	})
-	err := eg.Wait()
+	srcTags, err = job.Src.ListTags(ctx, job.Repo, registry.LIST_TAGS_NO_LIMITS)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return []string{}, microerror.Mask(err)
 	}
+	tagsTotal.WithLabelValues(job.Src.Name(), job.Repo).Set(float64(len(srcTags)))
+
+	dstTagsCount, err := job.Dst.CountTags(ctx, job.Repo)
+	if err != nil {
+		return []string{}, microerror.Mask(err)
+	}
+
+	dstTags, err = job.Dst.ListTags(ctx, job.Repo, len(srcTags)-dstTagsCount)
+	if err != nil {
+		return []string{}, microerror.Mask(err)
+	}
+	tagsTotal.WithLabelValues(job.Dst.Name(), job.Repo).Set(float64(len(dstTags)))
+
+	fmt.Printf("Number of tags in source: %d | Number of tags in destination: %d\n", len(srcTags), len(dstTags))
 
 	tags := sliceDiff(srcTags, dstTags)
 

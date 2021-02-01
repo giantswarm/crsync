@@ -76,12 +76,16 @@ func (r *Registry) authorize(user, password string) error {
 	return r.registryClient.Authorize(user, password)
 }
 
+func (r *Registry) CountTags(ctx context.Context, repository string) (int, error) {
+	return r.registryClient.CountTags(repository)
+}
+
 func (r *Registry) ListRepositories(ctx context.Context) ([]string, error) {
 	return r.registryClient.ListRepositories()
 }
 
-func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
-	return r.registryClient.ListTags(repository)
+func (r *Registry) ListTags(ctx context.Context, repository string, limit int) ([]string, error) {
+	return r.registryClient.ListTags(repository, limit)
 }
 
 func (r Registry) Name() string {

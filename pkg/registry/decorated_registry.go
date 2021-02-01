@@ -13,6 +13,7 @@ type DecoratedRegistryConfig struct {
 }
 
 type DecoratedRegistryConfigRateLimiter struct {
+	CountTags        *rate.Limiter
 	ListRepositories *rate.Limiter
 	ListTags         *rate.Limiter
 	Pull             *rate.Limiter
@@ -50,6 +51,10 @@ func NewDecoratedRegistry(config DecoratedRegistryConfig) (*DecoratedRegistry, e
 	return r, nil
 }
 
+func (r *DecoratedRegistry) CountTags(ctx context.Context, repository string) (int, error) {
+	return r.underlying.CountTags(ctx, repository)
+}
+
 func (r *DecoratedRegistry) Login(ctx context.Context, user, password string) error {
 	return microerror.Mask(r.underlying.Login(ctx, user, password))
 }
@@ -74,7 +79,7 @@ func (r *DecoratedRegistry) ListRepositories(ctx context.Context) ([]string, err
 	return rs, nil
 }
 
-func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
+func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string, limit int) ([]string, error) {
 	var err error
 
 	err = r.rateLimiter.ListTags.Wait(ctx)
@@ -82,7 +87,7 @@ func (r *DecoratedRegistry) ListTags(ctx context.Context, repository string) ([]
 		return nil, microerror.Mask(err)
 	}
 
-	ts, err := r.underlying.ListTags(ctx, repository)
+	ts, err := r.underlying.ListTags(ctx, repository, limit)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
