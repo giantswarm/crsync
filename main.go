@@ -13,7 +13,7 @@ import (
 func main() {
 	err := mainE(context.Background())
 	if err != nil {
-		panic(microerror.JSON(err))
+		panic(microerror.Pretty(err, true))
 	}
 }
 

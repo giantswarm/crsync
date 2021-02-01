@@ -167,7 +167,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 			))
 			err := http.ListenAndServe(fmt.Sprintf(":%d", r.flag.MetricsPort), nil)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed serving metrics: %s", microerror.JSON(microerror.Mask(err)))
+				fmt.Fprintf(os.Stderr, "Failed serving metrics: %s", microerror.Pretty(microerror.Mask(err), true))
 			}
 		}()
 	} else {
@@ -179,7 +179,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 		err := r.sync(ctx, srcRegistry, dstRegistry)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.JSON(err))
+			fmt.Fprintf(os.Stderr, "\nSync error:\n%s\n\n", microerror.Pretty(microerror.Mask(err), true))
 			errorsTotal.Inc()
 		} else {
 			fmt.Printf("\nTook %s\n", time.Since(start))
@@ -316,7 +316,7 @@ func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob
 
 				tags, err := r.processGetTagsJob(ctx, job)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.JSON(err))
+					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
 					errorsTotal.Inc()
 					return
 				}
@@ -335,7 +335,7 @@ func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob
 
 					select {
 					case <-ctx.Done():
-						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.JSON(err))
+						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.Pretty(microerror.Mask(err), true))
 						errorsTotal.Inc()
 					case resultCh <- j:
 						// ok
@@ -371,7 +371,7 @@ func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) er
 
 				err := r.processRetagJob(ctx, job)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.JSON(err))
+					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
 					errorsTotal.Inc()
 					return
 				}
