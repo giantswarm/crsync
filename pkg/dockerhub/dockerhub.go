@@ -2,25 +2,30 @@ package dockerhub
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/types"
 	"github.com/giantswarm/microerror"
 )
 
 const (
 	authEndpoint    = "https://hub.docker.com"
 	registryAddress = "https://index.docker.io" // nolint
-	tagsPerPage     = 10
 )
 
 type Config struct {
 }
 
 type DockerHub struct {
-	token string
+	user     string
+	password string
+	token    string
 
 	httpClient *http.Client
 }
@@ -33,7 +38,7 @@ func New(c Config) (*DockerHub, error) {
 	}, nil
 }
 
-func (d *DockerHub) Authorize(user, password string) error {
+func (d *DockerHub) Authorize(ctx context.Context, user, password string) error {
 
 	endpoint := fmt.Sprintf("%s/v2/users/login/", authEndpoint)
 
@@ -62,73 +67,42 @@ func (d *DockerHub) Authorize(user, password string) error {
 		return microerror.Mask(err)
 	}
 
+	d.user = user
+	d.password = password
 	d.token = authData.Token
 
 	return nil
 }
 
-func (d *DockerHub) ListRepositories() ([]string, error) {
+func (d *DockerHub) ListRepositories(ctx context.Context) ([]string, error) {
 	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
-func (d *DockerHub) ListTags(repository string) ([]string, error) {
-	page := 1
-	endpoint := fmt.Sprintf("%s/v2/repositories/%s/tags/?page=%d", authEndpoint, repository, page)
-
-	type dockerHubTags struct {
-		Count   int    `json:"count"`
-		Next    string `json:"next"`
-		Results []struct {
-			Name string `json:"name"`
-		}
+func (d *DockerHub) ListTags(ctx context.Context, repository string) ([]string, error) {
+	if d.user == "" || d.password == "" {
+		return nil, microerror.Maskf(executionFailedError, "can not run ListTags without calling Authorize first")
 	}
 
-	var tagsJSON dockerHubTags
-	var tags []string
-	{
-		nextEndpoint := endpoint
+	sys := &types.SystemContext{
+		DockerAuthConfig: &types.DockerAuthConfig{
+			Username: d.user,
+			Password: d.password,
+		},
+	}
 
-		for {
+	ref, err := reference.ParseNormalizedNamed(repository)
+	if err != nil {
+		return nil, microerror.Maskf(executionFailedError, "failed to parse repository %#q with error: %s", repository, err)
+	}
 
-			req, err := http.NewRequest("GET", nextEndpoint, nil)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
+	taggedRef, err := docker.NewReference(reference.TagNameOnly(ref))
+	if err != nil {
+		return nil, microerror.Maskf(executionFailedError, "failed to convert ref %#q to a tagged one with error: %s", ref, err)
+	}
 
-			req.Header.Set("Authorization", fmt.Sprintf("JWT %s", d.token))
-
-			resp, err := d.httpClient.Do(req)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			if resp.StatusCode != http.StatusOK {
-				return []string{}, microerror.Maskf(executionFailedError, fmt.Sprintf("Expected status code '%d', got '%d': %v", http.StatusOK, resp.StatusCode, string(body)))
-			}
-
-			err = json.Unmarshal(body, &tagsJSON)
-			if err != nil {
-				return []string{}, microerror.Mask(err)
-			}
-
-			for _, tag := range tagsJSON.Results {
-				tags = append(tags, tag.Name)
-			}
-
-			numOfPages := (tagsJSON.Count / tagsPerPage) + 1
-			if page == numOfPages {
-				break
-			}
-
-			nextEndpoint = tagsJSON.Next
-			page += 1
-		}
+	tags, err := docker.GetRepositoryTags(ctx, sys, taggedRef)
+	if err != nil {
+		return nil, microerror.Maskf(executionFailedError, "failed to get tags for ref %#q with error: %s", ref, err)
 	}
 
 	return tags, nil

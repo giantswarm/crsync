@@ -1,6 +1,7 @@
 package azurecr
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -37,7 +38,7 @@ func New(c Config) (*AzureCR, error) {
 	}, nil
 }
 
-func (d *AzureCR) Authorize(user, password string) error {
+func (d *AzureCR) Authorize(ctx context.Context, user, password string) error {
 
 	b64creds := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, password)))
 
@@ -46,11 +47,11 @@ func (d *AzureCR) Authorize(user, password string) error {
 	return nil
 }
 
-func (d *AzureCR) ListRepositories() ([]string, error) {
+func (d *AzureCR) ListRepositories(ctx context.Context) ([]string, error) {
 	return nil, microerror.Maskf(executionFailedError, "method not implemented")
 }
 
-func (d *AzureCR) ListTags(repository string) ([]string, error) {
+func (d *AzureCR) ListTags(ctx context.Context, repository string) ([]string, error) {
 	endpoint := fmt.Sprintf("%s/v2/%s/tags/list", d.registryEndpoint, repository)
 
 	type azureCRTags struct {
