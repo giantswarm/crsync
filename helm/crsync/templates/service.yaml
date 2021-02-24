@@ -5,8 +5,8 @@ metadata:
   namespace: {{ include "resource.default.namespace"  . }}
   labels:
     {{- include "labels.common" . | nindent 4 }}
-  annotations:
     giantswarm.io/monitoring: "true"
+  annotations:
     giantswarm.io/monitoring-path: "metrics"
     giantswarm.io/monitoring-port: {{ .Values.flags.metricsPort | quote }}
 spec:
