@@ -11,3 +11,5 @@ require (
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 )
+
+replace github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
