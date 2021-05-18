@@ -80,6 +80,9 @@ func (f *flag) Validate() error {
 	if f.SrcRegistryPassword == "" {
 		f.SrcRegistryPassword = os.Getenv(env.SrcRegistryPassword)
 	}
+	if f.SrcRegistryPassword == "" {
+		return microerror.Maskf(invalidFlagError, "--%s must not be empty", flagSrcRegistryPassword)
+	}
 	if f.SrcRegistryName == sourceRegistryName && f.QuayAPIToken == "" {
 		f.QuayAPIToken = os.Getenv(env.QuayAPIToken)
 	}

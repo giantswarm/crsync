@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix error when destination (Docker Hub) repository doesn't have any tags yet.
+
 ## [0.5.11] - 2021-02-02
 
 ### Added

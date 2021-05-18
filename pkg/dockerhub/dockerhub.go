@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
@@ -101,7 +102,11 @@ func (d *DockerHub) ListTags(ctx context.Context, repository string) ([]string, 
 	}
 
 	tags, err := docker.GetRepositoryTags(ctx, sys, taggedRef)
-	if err != nil {
+	if err != nil && strings.Contains(strings.ToLower(err.Error()), "404 (not found)") {
+		// Docker registry returns 404 when there are no tags for the
+		// repository.
+		tags = []string{}
+	} else if err != nil {
 		return nil, microerror.Maskf(executionFailedError, "failed to get tags for ref %#q with error: %s", ref, err)
 	}
 
