@@ -265,15 +265,15 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	retagWG := sync.WaitGroup{}
 
 	for i := 0; i < getTagsWorkersNum; i++ {
+		getTagsWG.Add(1)
 		go func(ctx context.Context) {
-			getTagsWG.Add(1)
 			defer getTagsWG.Done()
 			r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
 		}(ctx)
 	}
 	for i := 0; i < retagWorkesNum; i++ {
+		retagWG.Add(1)
 		go func(ctx context.Context) {
-			retagWG.Add(1)
 			defer retagWG.Done()
 			r.processRetagJobs(ctx, retagJobCh)
 		}(ctx)
