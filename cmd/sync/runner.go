@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/giantswarm/microerror"
@@ -28,10 +29,13 @@ import (
 const (
 	sourceRegistryName = "quay.io"
 
-	listBurst = 1
-	// pullPushBurst when set to too big number causes docker binary
-	// (client) to be killed.
-	pullPushBurst = 1
+	getTagsWorkersNum = 100
+	// Docker limits the number of parallel pushes to 5. This limit is 15
+	// to have 10 images pulled and ready to be pushed.
+	retagWorkesNum = 15
+	listBurst      = 1
+	// Docker limits the number of parallel pushes to 5 anyway.
+	pullPushBurst = 10
 	// Maximum time between logging out and logging in again.
 	loginTTL = 24 * time.Hour
 )
@@ -42,6 +46,11 @@ type runner struct {
 	stdout      io.Writer
 	stderr      io.Writer
 	lastLoginAt *time.Time
+
+	progressTagsDone   int64
+	progressTagsTotal  int64
+	progressReposDone  int64
+	progressReposTotal int64
 }
 
 func (r *runner) Run(cmd *cobra.Command, args []string) error {
@@ -65,6 +74,28 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 
 	fmt.Printf("Source registry       = %#q\n", sourceRegistryName)
 	fmt.Printf("Destination registry  = %#q\n", r.flag.DstRegistryName)
+
+	// Setup progress printer.
+	{
+		start := time.Now()
+		ticker := time.NewTicker(60 * time.Second)
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					fmt.Printf(
+						"*** Progress: repositories: [%d/%d] tags: [%d/%d] time elapsed: %s\n",
+						r.progressReposDone, r.progressReposTotal,
+						r.progressTagsDone, r.progressTagsTotal,
+						time.Since(start).Round(time.Second),
+					)
+				}
+			}
+		}()
+		defer ticker.Stop()
+	}
 
 	var srcRegistryClient registry.RegistryClient
 	{
@@ -226,21 +257,27 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	// getTagsJobCh channel has buffer 4 times bigger listing tags/repos burst to not starve
 	// processing.
 	getTagsJobCh := make(chan getTagsJob, listBurst*4)
+	getTagsWG := sync.WaitGroup{}
 
 	// retagJobCh channel has buffer 2 times bigger push/pull burst to not starve
 	// processing.
 	retagJobCh := make(chan retagJob, pullPushBurst*2)
+	retagWG := sync.WaitGroup{}
 
-	processGetTagsJobErrCh := make(chan error)
-	processRetagJobsErrCh := make(chan error)
-	go func(ctx context.Context) {
-		processGetTagsJobErrCh <- r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
-	}(ctx)
-	go func(ctx context.Context) {
-		processRetagJobsErrCh <- r.processRetagJobs(ctx, retagJobCh)
-	}(ctx)
-	defer close(processGetTagsJobErrCh)
-	defer close(processRetagJobsErrCh)
+	for i := 0; i < getTagsWorkersNum; i++ {
+		go func(ctx context.Context) {
+			getTagsWG.Add(1)
+			defer getTagsWG.Done()
+			r.processGetTagsJobs(ctx, getTagsJobCh, retagJobCh)
+		}(ctx)
+	}
+	for i := 0; i < retagWorkesNum; i++ {
+		go func(ctx context.Context) {
+			retagWG.Add(1)
+			defer retagWG.Done()
+			r.processRetagJobs(ctx, retagJobCh)
+		}(ctx)
+	}
 
 	fmt.Println()
 	fmt.Printf("Reading list of repositories to sync from source registry...\n")
@@ -248,9 +285,10 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 	if err != nil {
 		return microerror.Mask(err)
 	}
+	r.progressReposTotal = int64(len(reposToSync))
 
-	fmt.Printf("There are %d repositories to sync.\n", len(reposToSync))
-	if len(reposToSync) > 0 {
+	fmt.Printf("There are %d repositories to sync.\n", r.progressReposTotal)
+	if r.progressReposTotal > 0 {
 		fmt.Println()
 	}
 
@@ -259,125 +297,101 @@ func (r *runner) sync(ctx context.Context, srcRegistry, dstRegistry registry.Int
 			Src: srcRegistry,
 			Dst: dstRegistry,
 
-			ID:   fmt.Sprintf("Repository [%d/%d] = %#q", repoIndex+1, len(reposToSync), repo),
+			ID:   fmt.Sprintf("Repository [%d/%d] = %#q", repoIndex+1, r.progressReposTotal, repo),
 			Repo: repo,
 		}
 
 		select {
 		case <-ctx.Done():
 			return microerror.Mask(ctx.Err())
-		case err := <-processGetTagsJobErrCh:
-			return microerror.Mask(err)
-		case err := <-processRetagJobsErrCh:
-			return microerror.Mask(err)
 		case getTagsJobCh <- job:
 			// Job added.
 		}
 	}
 
-	// Wait for job processing to finish.
-	{
-		close(getTagsJobCh)
-		err = <-processGetTagsJobErrCh
-		if err != nil {
-			return microerror.Mask(err)
-		}
-
-		close(retagJobCh)
-		err = <-processRetagJobsErrCh
-		if err != nil {
-			return microerror.Mask(err)
-		}
-	}
+	// Wat for getting tags to finish.
+	close(getTagsJobCh)
+	getTagsWG.Wait()
+	// Wat for retagging to finish.
+	close(retagJobCh)
+	retagWG.Wait()
 
 	return nil
 }
 
-func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob, resultCh chan retagJob) error {
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
+func (r *runner) processGetTagsJobs(ctx context.Context, jobCh <-chan getTagsJob, resultCh chan retagJob) {
 	for {
 		select {
 		case <-ctx.Done():
-			return microerror.Mask(ctx.Err())
+			return
 		case job, ok := <-jobCh:
 			if !ok {
-				return nil
+				return
 			}
 
-			wg.Add(1)
+			start := time.Now()
 
-			go func(ctx context.Context, job getTagsJob) {
-				defer wg.Done()
-				start := time.Now()
+			fmt.Printf("%s: Getting list of tags to sync...\n", job.ID)
 
-				fmt.Printf("%s: Getting list of tags to sync...\n", job.ID)
+			tags, err := r.processGetTagsJob(ctx, job)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
+				errorsTotal.Inc()
+				continue
+			}
 
-				tags, err := r.processGetTagsJob(ctx, job)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed to get list of tags to sync: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
+			_ = atomic.AddInt64(&r.progressTagsTotal, int64(len(tags)))
+
+			fmt.Printf("%s: Scheduling %d tags to sync...\n", job.ID, len(tags))
+
+			for i, t := range tags {
+				j := retagJob{
+					Src: job.Src,
+					Dst: job.Dst,
+
+					ID:   fmt.Sprintf("%s: Tag [%d/%d] = %#q", job.ID, i+1, len(tags), t),
+					Repo: job.Repo,
+					Tag:  t,
+				}
+
+				select {
+				case <-ctx.Done():
+					fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s ***\n", job.ID, i+1, len(tags), microerror.Pretty(microerror.Mask(err), true))
 					errorsTotal.Inc()
-					return
+				case resultCh <- j:
+					// ok
 				}
+			}
 
-				fmt.Printf("%s: Scheduling %d tags to sync...\n", job.ID, len(tags))
-
-				for i, t := range tags {
-					j := retagJob{
-						Src: job.Src,
-						Dst: job.Dst,
-
-						ID:   fmt.Sprintf("%s: Tag [%d/%d] = %#q", job.ID, i+1, len(tags), t),
-						Repo: job.Repo,
-						Tag:  t,
-					}
-
-					select {
-					case <-ctx.Done():
-						fmt.Fprintf(os.Stderr, "%s: Cancelled while scheduling %d/%d job: %s\n", job.ID, i+1, len(tags), microerror.Pretty(microerror.Mask(err), true))
-						errorsTotal.Inc()
-					case resultCh <- j:
-						// ok
-					}
-				}
-
-				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
-			}(ctx, job)
+			fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start).Round(time.Second))
+			_ = atomic.AddInt64(&r.progressReposDone, 1)
 		}
 	}
 }
 
-func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) error {
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
+func (r *runner) processRetagJobs(ctx context.Context, jobCh <-chan retagJob) {
 	for {
 		select {
 		case <-ctx.Done():
-			return microerror.Mask(ctx.Err())
+			return
 		case job, ok := <-jobCh:
 			if !ok {
-				return nil
+				return
 			}
 
-			wg.Add(1)
+			start := time.Now()
 
-			go func(ctx context.Context, job retagJob) {
-				defer wg.Done()
-				start := time.Now()
+			fmt.Printf("%s: Retagging...\n", job.ID)
 
-				fmt.Printf("%s: Retagging...\n", job.ID)
+			err := r.processRetagJob(ctx, job)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
+				errorsTotal.Inc()
+				continue
+			}
 
-				err := r.processRetagJob(ctx, job)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%s: Failed to retag: %s\n", job.ID, microerror.Pretty(microerror.Mask(err), true))
-					errorsTotal.Inc()
-					return
-				}
-
-				fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start))
-			}(ctx, job)
+			fmt.Printf("%s: Done (took %s)\n", job.ID, time.Since(start).Round(time.Second))
+			_ = atomic.AddInt64(&r.progressTagsDone, 1)
 		}
 	}
 }
@@ -450,8 +464,8 @@ func newDecoratedRegistry(reg registry.Interface) (*registry.DecoratedRegistry, 
 		RateLimiter: registry.DecoratedRegistryConfigRateLimiter{
 			ListRepositories: rate.NewLimiter(rate.Every(5*time.Second), listBurst),
 			ListTags:         rate.NewLimiter(rate.Every(1*time.Second), listBurst),
-			Pull:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
-			Push:             rate.NewLimiter(rate.Every(1000*time.Millisecond), pullPushBurst),
+			Pull:             rate.NewLimiter(rate.Every(1*time.Second), pullPushBurst),
+			Push:             rate.NewLimiter(rate.Every(1*time.Second), pullPushBurst),
 		},
 		Underlying: reg,
 	}

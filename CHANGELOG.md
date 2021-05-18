@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Limit number of retag jobs executed in parallel to 15 to prevent docker from choking.
+- Print overall progress every minute.
+
 ### Fixed
 
 - Fix error when destination (Docker Hub) repository doesn't have any tags yet.
