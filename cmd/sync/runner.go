@@ -30,9 +30,12 @@ const (
 	sourceRegistryName = "quay.io"
 
 	getTagsWorkersNum = 100
-	// Docker limits the number of parallel pushes to 5. This limit is 15
-	// to have 10 images pulled and ready to be pushed.
-	retagWorkesNum = 15
+	// Docker limits the number of parallel pushes to 5. This limit is
+	// 4 because there is no real speed gain when going above that and we
+	// put unnecessary pressure on the docker daemon. This gives also one
+	// slot left is there is another docker push operation executed on
+	// the node.
+	retagWorkesNum = 4
 	listBurst      = 1
 	// Docker limits the number of parallel pushes to 5 anyway.
 	pullPushBurst = 10
@@ -86,7 +89,7 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 					return
 				case <-ticker.C:
 					fmt.Printf(
-						"*** Progress: repositories: [%d/%d] tags: [%d/%d] time elapsed: %s\n",
+						"*** Progress: repositories: [%d/%d] tags: [%d/%d] time elapsed: %s ***\n",
 						r.progressReposDone, r.progressReposTotal,
 						r.progressTagsDone, r.progressTagsTotal,
 						time.Since(start).Round(time.Second),
