@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Limit number of retag jobs executed in parallel to 15 to prevent docker from choking.
+- Limit number of retag jobs executed in parallel to 4 to prevent docker from choking.
 - Print overall progress every minute.
 
 ### Fixed
