@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2021-05-20
+
 ### Added
 
 - Limit number of retag jobs executed in parallel to 4 to prevent docker from choking.
@@ -154,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.5.11...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/giantswarm/crsync/compare/v0.5.11...v0.6.0
 [0.5.11]: https://github.com/giantswarm/crsync/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/giantswarm/crsync/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/giantswarm/crsync/compare/v0.5.8...v0.5.9
