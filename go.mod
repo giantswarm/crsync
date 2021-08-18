@@ -1,6 +1,6 @@
 module github.com/giantswarm/crsync
 
-go 1.14
+go 1.16
 
 require (
 	github.com/containers/image/v5 v5.10.5
@@ -14,5 +14,6 @@ require (
 
 replace (
 	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
+	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.0.0
 	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
 )
