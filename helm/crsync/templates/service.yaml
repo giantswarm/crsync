@@ -9,6 +9,7 @@ metadata:
   annotations:
     giantswarm.io/monitoring-path: "metrics"
     giantswarm.io/monitoring-port: {{ .Values.flags.metricsPort | quote }}
+    prometheus.io/scrape: "true"
 spec:
   ports:
     - name: metrics
