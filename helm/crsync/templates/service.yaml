@@ -7,9 +7,8 @@ metadata:
     {{- include "labels.common" . | nindent 4 }}
     giantswarm.io/monitoring: "true"
   annotations:
-    giantswarm.io/monitoring-path: "metrics"
+    giantswarm.io/monitoring-path: "/metrics"
     giantswarm.io/monitoring-port: {{ .Values.flags.metricsPort | quote }}
-    prometheus.io/scrape: "true"
 spec:
   ports:
     - name: metrics
