@@ -8,8 +8,8 @@ require (
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/cobra v1.2.1
-	golang.org/x/sync$2036812b2e83c
-	golang.org/x/time$21f47c861a9ac
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 )
 
 replace (
