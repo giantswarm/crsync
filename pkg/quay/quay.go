@@ -74,7 +74,6 @@ func (q *Quay) ListRepositories(ctx context.Context) ([]string, error) {
 			}
 
 			lastModifiedTimestamp := time.Now().Add(-1 * q.lastModified).Unix()
-
 			if int64(repo.LastModified) > lastModifiedTimestamp {
 				reposToSync = append(reposToSync, fmt.Sprintf("%s/%s", q.namespace, repo.Name))
 			}
