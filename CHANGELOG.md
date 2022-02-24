@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2022-02-24
+
 ### Fixed
 
 - Handle pagination when listing repositories using the Quay REST API.
@@ -160,7 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/giantswarm/crsync/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/giantswarm/crsync/compare/v0.5.11...v0.6.0
 [0.5.11]: https://github.com/giantswarm/crsync/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/giantswarm/crsync/compare/v0.5.9...v0.5.10
