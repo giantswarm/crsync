@@ -7,5 +7,6 @@ type Repository struct {
 }
 
 type RepositoriesJSON struct {
+	NextPage     string       `json:"next_page"`
 	Repositories []Repository `json:"repositories"`
 }
