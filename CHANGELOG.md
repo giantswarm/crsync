@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Handle pagination when listing repositories using the Quay REST API.
+
 ## [0.6.0] - 2021-05-20
 
 ### Added
