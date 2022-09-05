@@ -1,9 +1,9 @@
 # pkg:golang/github.com/hashicorp/consul/api@v1.13.0
-CVE-2022-29153 until=2022-08-31
+CVE-2022-29153 until=2022-12-31
 
 # pkg:golang/github.com/hashicorp/consul/sdk@v0.9.0
-CVE-2022-24687 until=2022-08-31
+CVE-2022-24687 until=2022-12-31
 
 # pkg:golang/github.com/nats-io/jwt@v0.3.2
-CVE-2020-26892 until=2022-08-31
-CVE-2021-3127 until=2022-08-31
+CVE-2020-26892 until=2022-12-31
+CVE-2021-3127 until=2022-12-31
