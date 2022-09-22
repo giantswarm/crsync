@@ -5,7 +5,7 @@ var (
 	gitSHA      = "n/a"
 	name        = "crsync"
 	source      = "https://github.com/giantswarm/crsync"
-	version     = "0.6.1-dev"
+	version     = "0.6.2-dev"
 )
 
 func Description() string {

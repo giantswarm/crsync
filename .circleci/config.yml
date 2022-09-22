@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@4.6.0
+  architect: giantswarm/architect@4.24.0
 
 workflows:
   build:
@@ -26,6 +26,7 @@ workflows:
               only: /^v.*/
 
       - architect/push-to-app-catalog:
+          context: architect
           name: "package and push crsync"
           app_catalog: "giantswarm-operations-platform-catalog"
           app_catalog_test: "giantswarm-operations-platform-test-catalog"
