@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -127,7 +127,7 @@ func (q *Quay) ListTags(ctx context.Context, repository string) ([]string, error
 			}
 
 			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return nil, microerror.Mask(err)
 			}
@@ -176,7 +176,7 @@ func (q *Quay) listRepositoriesForPage(ctx context.Context, nextPage string) (Re
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return repos, microerror.Mask(err)
 	}
