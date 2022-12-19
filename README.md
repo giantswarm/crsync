@@ -2,7 +2,7 @@
 
 # crsync
 
-The `crsync` tool synchronizes images between `quay.io` and configured target container registry. 
+The `crsync` tool synchronizes images between `quay.io` and configured target container registry.
 
 ## Getting Project
 
@@ -61,7 +61,7 @@ destinationRegistry:
 * Create a new GitHub release with the version e.g. `v0.1.0` and link the
 changelog entry.
 * This will push a new git tag and trigger a new tarball to be pushed to the
-[giantswarm-operations-platform-catalog].  
+[giantswarm-operations-platform-catalog].
 
 [app-operator]: https://github.com/giantswarm/app-operator
 [giantswarm-operations-platform-catalog]: https://github.com/giantswarm/giantswarm-operations-platform-catalog
