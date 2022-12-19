@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/giantswarm/microerror"
@@ -77,7 +77,7 @@ func (d *AzureCR) ListTags(ctx context.Context, repository string) ([]string, er
 			}
 
 			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return []string{}, microerror.Mask(err)
 			}
