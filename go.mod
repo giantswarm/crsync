@@ -28,5 +28,7 @@ replace (
 	github.com/miekg/dns v1.0.14 => github.com/miekg/dns v1.1.50
 	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.8.4
 	github.com/opencontainers/runc v1.0.0-rc91 => github.com/opencontainers/runc v1.1.3
+	// Resolves sonatype-2019-0890
+	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
 )
