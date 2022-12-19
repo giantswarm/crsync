@@ -199,7 +199,11 @@ func (r *runner) run(ctx context.Context, cmd *cobra.Command, args []string) err
 				prometheus.DefaultGatherer,
 				promhttp.HandlerOpts{},
 			))
-			err := http.ListenAndServe(fmt.Sprintf(":%d", r.flag.MetricsPort), nil)
+			server := &http.Server{
+				Addr:              fmt.Sprintf(":%d", r.flag.MetricsPort),
+				ReadHeaderTimeout: 60 * time.Second,
+			}
+			err := server.ListenAndServe()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed serving metrics: %s", microerror.Pretty(microerror.Mask(err), true))
 			}

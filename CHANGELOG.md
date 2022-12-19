@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Add 60 seconds timeout to metrics endpoint to solve reported issue by `golangcli-lint`: [G114](https://github.com/golangci/golangci-lint/blob/1926748b44fb0dbca8c320bf2145190367d7fedc/.golangci.reference.yml#L774)
+
 ## [0.6.1] - 2022-02-24
 
 ### Fixed
