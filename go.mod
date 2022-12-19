@@ -6,12 +6,11 @@ go 1.16
 exclude k8s.io/kubernetes v1.13.0
 
 require (
-	github.com/containers/image/v5 v5.10.5
+	github.com/containers/image/v5 v5.16.1
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/prometheus/client_golang v1.11.1
-	github.com/prometheus/common v0.32.1 // indirect
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.2.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 )
@@ -29,5 +28,7 @@ replace (
 	github.com/miekg/dns v1.0.14 => github.com/miekg/dns v1.1.50
 	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.8.4
 	github.com/opencontainers/runc v1.0.0-rc91 => github.com/opencontainers/runc v1.1.3
+	// Resolves sonatype-2019-0890
+	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
 )
