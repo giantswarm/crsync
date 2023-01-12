@@ -1,6 +1,12 @@
 # pkg:golang/github.com/hashicorp/consul/api@v1.13.0
 CVE-2022-29153 until=2023-02-01
 
+# pkg:golang/github.com/hashicorp/consul/api@v1.10.1
+CVE-2021-41803 until=2023-02-01
+
+# pkg:golang/github.com/hashicorp/consul/sdk@v0.8.0
+CVE-2021-41803 until=2023-02-01
+
 # pkg:golang/github.com/hashicorp/consul/sdk@v0.9.0
 CVE-2022-24687 until=2023-02-01
 
@@ -21,3 +27,18 @@ sonatype-2022-6522 until=2023-02-01
 sonatype-2020-1759 until=2023-02-01
 CVE-2020-8911 until=2023-02-01
 CVE-2020-8912 until=2023-02-01
+
+# pkg:golang/github.com/go-ldap/ldap/v3@v3.1.10
+sonatype-2020-1055 until=2023-02-01
+
+# pkg:golang/github.com/jackc/pgproto3@v1.1.0
+sonatype-2021-0853 until=2023-02-01
+
+# pkg:golang/github.com/labstack/echo/v4@v4.7.2
+sonatype-2022-5436 until=2023-02-01
+
+# pkg:golang/github.com/sylabs/sif/v2@v2.8.0
+CVE-2022-39237 until=2023-02-01
+
+# pkg:golang/github.com/valyala/fasthttp@v1.30.0
+CVE-2022-21221 until=2023-02-01
