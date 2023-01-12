@@ -6,13 +6,13 @@ go 1.16
 exclude k8s.io/kubernetes v1.13.0
 
 require (
-	github.com/containers/image/v5 v5.16.1
+	github.com/containers/image/v5 v5.23.1
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v1.0.0
-	github.com/prometheus/client_golang v1.11.1
-	github.com/spf13/cobra v1.2.1
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
+	github.com/prometheus/client_golang v1.14.0
+	github.com/spf13/cobra v1.6.1
+	golang.org/x/sync v0.1.0
+	golang.org/x/time v0.3.0
 )
 
 replace (
@@ -21,7 +21,7 @@ replace (
 	github.com/containerd/containerd v1.6.1 => github.com/containerd/containerd v1.6.6
 	github.com/containers/storage v1.24.8 => github.com/containers/storage v1.40.3
 	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
-	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.0.0
+	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
 	github.com/hashicorp/consul/api v1.3.0 => github.com/hashicorp/consul/api v1.13.0
 	github.com/hashicorp/consul/sdk v0.3.0 => github.com/hashicorp/consul/sdk v0.9.0
