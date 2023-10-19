@@ -6,23 +6,23 @@ go 1.16
 exclude k8s.io/kubernetes v1.13.0
 
 require (
-	github.com/containers/image/v5 v5.23.1
+	github.com/containers/image/v5 v5.28.0
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v1.0.0
-	github.com/prometheus/client_golang v1.14.0
-	github.com/spf13/cobra v1.6.1
-	golang.org/x/sync v0.1.0
+	github.com/prometheus/client_golang v1.17.0
+	github.com/spf13/cobra v1.7.0
+	golang.org/x/sync v0.4.0
 	golang.org/x/time v0.3.0
 )
 
 replace (
 	github.com/aws/aws-sdk-go v1.27.0 => github.com/aws/aws-sdk-go v1.44.53
-	github.com/cloudflare/circl => github.com/cloudflare/circl v1.3.3
+	github.com/cloudflare/circl => github.com/cloudflare/circl v1.3.5
 	github.com/containerd/containerd v1.3.2 => github.com/containerd/containerd v1.6.6
 	github.com/containerd/containerd v1.6.1 => github.com/containerd/containerd v1.6.6
 	github.com/containers/storage v1.24.8 => github.com/containers/storage v1.40.3
 	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
-	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
 	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
 	github.com/hashicorp/consul/api v1.3.0 => github.com/hashicorp/consul/api v1.13.0
@@ -33,6 +33,6 @@ replace (
 	// Resolves sonatype-2019-0890
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/net => golang.org/x/net v0.16.0
-	google.golang.org/grpc => google.golang.org/grpc v1.56.2
+	golang.org/x/net => golang.org/x/net v0.17.0
+	google.golang.org/grpc => google.golang.org/grpc v1.59.0
 )
