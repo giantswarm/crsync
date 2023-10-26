@@ -1,3 +1,4 @@
+{{- if not .Values.podSecurityStandards.enforced }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -21,3 +22,4 @@ spec:
   fsGroup:
     rule: RunAsAny
   readOnlyRootFilesystem: false
+{{- end }}
