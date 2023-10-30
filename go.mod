@@ -11,7 +11,7 @@ require (
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.4.0
 	golang.org/x/time v0.3.0
 )
 
