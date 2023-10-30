@@ -11,7 +11,7 @@ require (
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/spf13/cobra v1.6.1
-	golang.org/x/sync v0.1.0
+	golang.org/x/sync v0.3.0
 	golang.org/x/time v0.3.0
 )
 
@@ -50,7 +50,7 @@ require (
 	github.com/opencontainers/runc v1.1.4 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/client_model v0.3.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
@@ -60,7 +60,7 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
@@ -83,5 +83,5 @@ replace (
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
 	golang.org/x/net => golang.org/x/net v0.17.0
-	google.golang.org/grpc => google.golang.org/grpc v1.56.2
+	google.golang.org/grpc => google.golang.org/grpc v1.59.0
 )
