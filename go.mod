@@ -66,7 +66,7 @@ require (
 
 replace (
 	github.com/aws/aws-sdk-go v1.27.0 => github.com/aws/aws-sdk-go v1.44.53
-	github.com/cloudflare/circl => github.com/cloudflare/circl v1.3.3
+	github.com/cloudflare/circl => github.com/cloudflare/circl v1.3.6
 	github.com/containerd/containerd v1.3.2 => github.com/containerd/containerd v1.6.6
 	github.com/containerd/containerd v1.6.1 => github.com/containerd/containerd v1.6.6
 	github.com/containers/storage v1.24.8 => github.com/containers/storage v1.40.3
