@@ -70,7 +70,7 @@ replace (
 	github.com/containerd/containerd v1.6.1 => github.com/containerd/containerd v1.6.6
 	github.com/containers/storage v1.24.8 => github.com/containers/storage v1.40.3
 	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
-	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v5 v5.1.0
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
 	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
 	github.com/hashicorp/consul/api v1.3.0 => github.com/hashicorp/consul/api v1.13.0
