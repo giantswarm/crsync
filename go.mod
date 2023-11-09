@@ -62,25 +62,3 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace (
-	github.com/aws/aws-sdk-go v1.27.0 => github.com/aws/aws-sdk-go v1.44.53
-	github.com/cloudflare/circl => github.com/cloudflare/circl v1.3.6
-	github.com/containerd/containerd v1.3.2 => github.com/containerd/containerd v1.6.6
-	github.com/containerd/containerd v1.6.1 => github.com/containerd/containerd v1.6.6
-	github.com/containers/storage v1.24.8 => github.com/containers/storage v1.40.3
-	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
-	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v5 v5.1.0
-	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
-	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
-	github.com/hashicorp/consul/api v1.3.0 => github.com/hashicorp/consul/api v1.13.0
-	github.com/hashicorp/consul/sdk v0.3.0 => github.com/hashicorp/consul/sdk v0.9.0
-	github.com/miekg/dns v1.0.14 => github.com/miekg/dns v1.1.50
-	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.8.4
-	github.com/opencontainers/runc v1.0.0-rc91 => github.com/opencontainers/runc v1.1.3
-	// Resolves sonatype-2019-0890
-	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
-	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/net => golang.org/x/net v0.18.0
-	google.golang.org/grpc => google.golang.org/grpc v1.59.0
-)
