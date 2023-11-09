@@ -81,6 +81,6 @@ replace (
 	// Resolves sonatype-2019-0890
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	github.com/prometheus/client_golang v1.10.0 => github.com/prometheus/client_golang v1.12.2
-	golang.org/x/net => golang.org/x/net v0.17.0
+	golang.org/x/net => golang.org/x/net v0.18.0
 	google.golang.org/grpc => google.golang.org/grpc v1.59.0
 )
