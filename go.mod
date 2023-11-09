@@ -7,7 +7,7 @@ exclude k8s.io/kubernetes v1.13.0
 
 require (
 	github.com/containers/image/v5 v5.28.0
-	github.com/giantswarm/microerror v0.4.0
+	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/spf13/cobra v1.8.0
