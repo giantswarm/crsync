@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2023-11-10
+
 ### Changed
 
 - Add a switch for PSP CR installation.
@@ -167,7 +169,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first version of the helm chart.
 - Add release automation.
 
-[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/giantswarm/crsync/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/giantswarm/crsync/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/giantswarm/crsync/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/giantswarm/crsync/compare/v0.5.11...v0.6.0
 [0.5.11]: https://github.com/giantswarm/crsync/compare/v0.5.10...v0.5.11
