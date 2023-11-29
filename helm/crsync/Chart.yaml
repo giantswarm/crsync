@@ -1,6 +1,8 @@
-apiVersion: "v1"
+apiVersion: v2
 name: crsync
 description: "Helm chart for crsync retagging tool"
 home: "https://github.com/giantswarm/crsync"
-version: [[ .Version ]]
-appVersion: [[ .AppVersion ]]
+version: 0.8.0
+appVersion: 0.8.0
+annotations:
+  application.giantswarm.io/team: honeybadger

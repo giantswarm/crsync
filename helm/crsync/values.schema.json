@@ -1,0 +1,98 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "Installation": {
+            "type": "object",
+            "properties": {
+                "V1": {
+                    "type": "object",
+                    "properties": {
+                        "Registry": {
+                            "type": "object",
+                            "properties": {
+                                "Domain": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "destinationRegistry": {
+            "type": "object",
+            "properties": {
+                "credentials": {
+                    "type": "object",
+                    "properties": {
+                        "password": {
+                            "type": "string"
+                        },
+                        "user": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "flags": {
+            "type": "object",
+            "properties": {
+                "includePrivateRepositories": {
+                    "type": "boolean"
+                },
+                "lastModified": {
+                    "type": "string"
+                },
+                "metricsPort": {
+                    "type": "integer"
+                }
+            }
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "podSecurityStandards": {
+            "type": "object",
+            "properties": {
+                "enforced": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "sourceRegistry": {
+            "type": "object",
+            "properties": {
+                "credentials": {
+                    "type": "object",
+                    "properties": {
+                        "password": {
+                            "type": "string"
+                        },
+                        "user": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quayAPIToken": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

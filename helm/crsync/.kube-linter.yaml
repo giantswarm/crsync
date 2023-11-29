@@ -1,0 +1,6 @@
+checks:
+  addAllBuiltIn: true
+  exclude:
+  - "no-read-only-root-fs"
+  - "docker-sock"
+  - "run-as-non-root"

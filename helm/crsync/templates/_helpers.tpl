@@ -17,12 +17,12 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "labels.common" -}}
-app: {{ include "name" . | quote }}
 {{ include "labels.selector" . }}
-app.giantswarm.io/branch: {{ .Values.project.branch | quote }}
-app.giantswarm.io/commit: {{ .Values.project.commit | quote }}
-app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+application.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+application.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+application.giantswarm.io/team: {{ index .Chart.Annotations "application.giantswarm.io/team" | quote }}
+giantswarm.io/managed-by: {{ .Release.Name | quote }}
+giantswarm.io/service-type: {{ .Values.serviceType }}
 helm.sh/chart: {{ include "chart" . | quote }}
 {{- end -}}
 
