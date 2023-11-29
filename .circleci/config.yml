@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  architect: giantswarm/architect@4.35.1
+  architect: giantswarm/architect@4.35.5
 
 workflows:
   build:
@@ -13,12 +13,9 @@ workflows:
             tags:
               only: /^v.*/
 
-      - architect/push-to-docker:
+      - architect/push-to-registries:
           context: architect
-          name: push-to-quay
-          image: "quay.io/giantswarm/crsync"
-          username_envar: "QUAY_USERNAME"
-          password_envar: "QUAY_PASSWORD"
+          name: push-to-registries
           requires:
             - go-build
           filters:
@@ -32,8 +29,7 @@ workflows:
           app_catalog_test: "giantswarm-operations-platform-test-catalog"
           chart: "crsync"
           requires:
-            - push-to-quay
-          # Trigger job on git tag.
+            - push-to-registries
           filters:
             tags:
               only: /^v.*/
