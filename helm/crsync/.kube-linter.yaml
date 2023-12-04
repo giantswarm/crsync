@@ -1,0 +1,17 @@
+checks:
+  addAllBuiltIn: true
+  exclude:
+  - "no-read-only-root-fs"
+  - "docker-sock"
+  - "run-as-non-root"
+  - "use-namespace"
+  - "dnsconfig-options"
+  - "minimum-three-replicas"
+  - "no-liveness-probe"
+  - "no-node-affinity"
+  - "no-readiness-probe"
+  - "no-rolling-update-strategy"
+  - "read-secret-from-env-var"
+  - "required-annotation-email"
+  - "required-label-owner"
+  - "writable-host-mount"
