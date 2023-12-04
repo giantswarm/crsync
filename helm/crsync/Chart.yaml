@@ -1,6 +1,6 @@
 apiVersion: v2
 name: crsync
-version: 0.8.0
+version: 0.9.0
 appVersion: 0.8.0
 description: "Helm chart for crsync retagging tool"
 home: "https://github.com/giantswarm/crsync"
