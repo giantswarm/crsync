@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Move to `app-build-suite` and add team annotation.
+
 ## [0.8.0] - 2023-11-28
 
 ### Added

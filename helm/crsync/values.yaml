@@ -20,15 +20,11 @@ sourceRegistry:
   quayAPIToken: ""
 image:
   name: giantswarm/crsync
-  tag: "[[ .Version ]]"
+  tag: ""
 Installation:
   V1:
     Registry:
       Domain: quay.io
-
-project:
-  branch: "[[ .Branch ]]"
-  commit: "[[ .SHA ]]"
 
 podSecurityStandards:
   enforced: false
