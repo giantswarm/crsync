@@ -35,6 +35,7 @@ spec:
   - policyName: disallow-privilege-escalation 
     ruleNames: 
     - privilege-escalation
+    - autogen-privilege-escalation
   match:
     any:
     - resources:
