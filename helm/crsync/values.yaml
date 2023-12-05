@@ -4,7 +4,7 @@ flags:
   metricsPort: 8000
 
 destinationRegistry:
-  name: docker.io
+  name: gsoci.azurecr.io
   credentials:
     user: ""
     # base64 encoded password
