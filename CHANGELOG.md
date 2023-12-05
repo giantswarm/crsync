@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Configure `gsoci.azurecr.io` as the default container image registry.
+
 ## [0.9.1] - 2023-12-05
 
 ### Fixed
@@ -128,7 +132,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Measure tag count in case of **no** errors.
-
 
 ## [0.5.0] - 2020-07-21
 
