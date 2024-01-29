@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Move pss values under the global property
+
 ## [0.9.2] - 2024-01-09
 
 ### Changed
