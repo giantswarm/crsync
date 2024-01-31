@@ -6,3 +6,4 @@ description: "Helm chart for crsync retagging tool"
 home: "https://github.com/giantswarm/crsync"
 annotations:
   application.giantswarm.io/team: honeybadger
+icon: https://s.giantswarm.io/app-icons/giantswarm/1/light.svg
