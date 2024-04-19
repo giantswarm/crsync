@@ -9,6 +9,10 @@ metadata:
 spec:
   background: true
   exceptions:
+  - policyName: disallow-privileged-containers
+    ruleNames:
+    - autogen-privileged-containers
+    - privileged-containers
   - policyName: disallow-host-path
     ruleNames:
     - host-path
