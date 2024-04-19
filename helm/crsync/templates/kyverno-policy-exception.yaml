@@ -3,12 +3,16 @@ apiVersion: kyverno.io/v2alpha1
 kind: PolicyException
 metadata:
   name: {{ include "resource.default.name"  . }}
-  namespace: {{ include "resource.default.namespace"  . }}
+  namespace: giantswarm
   labels:
     {{- include "labels.common" . | nindent 4 }}
 spec:
   background: true
   exceptions:
+  - policyName: disallow-privileged-containers
+    ruleNames:
+    - autogen-privileged-containers
+    - privileged-containers
   - policyName: disallow-host-path
     ruleNames:
     - host-path
@@ -32,8 +36,8 @@ spec:
     - autogen-cronjob-require-drop-all
     - autogen-adding-capabilities-strict
     - autogen-cronjob-adding-capabilities-strict
-  - policyName: disallow-privilege-escalation 
-    ruleNames: 
+  - policyName: disallow-privilege-escalation
+    ruleNames:
     - privilege-escalation
     - autogen-privilege-escalation
   match:

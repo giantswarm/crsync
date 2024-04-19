@@ -15,3 +15,5 @@ checks:
   - "required-annotation-email"
   - "required-label-owner"
   - "writable-host-mount"
+  - "privilege-escalation-container"
+  - "privileged-container"
