@@ -34,6 +34,16 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
+      - image: docker:26-dind
+        imagePullPolicy: IfNotPresent
+        name: dind
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/run/
+          name: socket-volume
       - args:
         - sync
         - --dst-name={{ .Values.destinationRegistry.name }}
@@ -65,10 +75,10 @@ spec:
         name: {{ include "resource.default.name"  . }}
         securityContext:
           seccompProfile:
-            type: RuntimeDefault 
+            type: RuntimeDefault
         volumeMounts:
-        - mountPath: /var/run/docker.sock
-          name: docker-socket
+        - mountPath: /var/run/
+          name: socket-volume
         resources:
           requests:
             cpu: 100m
@@ -82,6 +92,6 @@ spec:
       serviceAccount: {{ include "resource.default.name"  . }}
       serviceAccountName: {{ include "resource.default.name"  . }}
       volumes:
-      - name: docker-socket
-        hostPath:
-          path: /var/run/docker.sock
+      - name: socket-volume
+        emptyDir: {}
+
