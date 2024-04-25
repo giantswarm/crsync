@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add service monitors
+
+### Removed
+
+- Remove old monitoring labels
+
 ## [0.9.4] - 2024-04-19
 
 ### Added
+
 - Add docker in docker
 
 ## [0.9.3] - 2024-01-29
