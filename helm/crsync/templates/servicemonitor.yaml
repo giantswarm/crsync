@@ -1,0 +1,22 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "resource.default.name"  . }}
+  namespace: {{ include "resource.default.namespace"  . }}
+  labels:
+    application.giantswarm.io/team: honeybadger
+spec:
+  endpoints:
+    - honorLabels: true
+      interval: {{ .Values.serviceMonitor.interval }}
+      path: /metrics
+      port: metrics
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "resource.default.namespace"  . }}
+  selector:
+    matchLabels:
+      {{- include "labels.selector" . | nindent 6 }}
+  {{- end }}

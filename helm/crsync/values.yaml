@@ -1,3 +1,5 @@
+serviceType: system
+
 flags:
   includePrivateRepositories: false
   lastModified: 1h
@@ -25,6 +27,13 @@ Installation:
   V1:
     Registry:
       Domain: quay.io
+
+serviceMonitor:
+  enabled: true
+  # -- (duration) Prometheus scrape interval.
+  interval: "60s"
+  # -- (duration) Prometheus scrape timeout.
+  scrapeTimeout: "45s"
 
 global:
   podSecurityStandards:
