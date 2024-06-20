@@ -8,7 +8,7 @@ toolchain go1.22.4
 exclude k8s.io/kubernetes v1.13.0
 
 require (
-	github.com/containers/image/v5 v5.31.0
+	github.com/containers/image/v5 v5.31.1
 	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.1.1
 	github.com/prometheus/client_golang v1.19.1
