@@ -34,7 +34,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - image: docker:26-dind
+      - image: docker:27-dind
         imagePullPolicy: IfNotPresent
         name: dind
         securityContext:
