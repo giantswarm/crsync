@@ -8,7 +8,7 @@ toolchain go1.22.6
 exclude k8s.io/kubernetes v1.13.0
 
 require (
-	github.com/containers/image/v5 v5.32.0
+	github.com/containers/image/v5 v5.32.1
 	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.1.1
 	github.com/prometheus/client_golang v1.19.1
@@ -49,7 +49,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.23.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
