@@ -11,7 +11,7 @@ require (
 	github.com/containers/image/v5 v5.32.1
 	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.1.1
-	github.com/prometheus/client_golang v1.20.0
+	github.com/prometheus/client_golang v1.20.1
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sync v0.8.0
 	golang.org/x/time v0.6.0
